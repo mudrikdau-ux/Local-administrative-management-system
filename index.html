@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Local Administration Management System - Improving community services through digital transformation.">
+  <title>LAMS | Local Administration Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <header class="navbar" id="navbar">
+    <div class="container nav-container">
+      <a href="#" class="logo">
+        <i class="fas fa-landmark"></i>
+        <span>LAMS</span>
+      </a>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+      <nav class="nav-menu" id="navMenu">
+        <ul class="nav-list">
+          <li><a href="index.html" class="nav-link active">Home</a></li>
+          <li><a href="about.html" class="nav-link">About</a></li>
+          <li><a href="announce.html" class="nav-link">Announcements</a></li>
+          <li><a href="contact.html" class="nav-link">Contact</a></li>
+          <li class="mobile-only"><a href="login.html" class="btn btn-primary mobile-login-btn">Login</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button id="languageToggle" class="icon-btn" title="Switch Language">
+          <i class="fas fa-language"></i>
+          <span class="lang-text">EN</span>
+        </button>
+        <button id="themeToggle" class="icon-btn" title="Toggle Theme">
+          <i class="fas fa-moon"></i>
+        </button>
+        <a href="login.html" class="btn btn-primary desktop-login-btn">Login</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="menu-overlay" id="menuOverlay"></div>
+
+  <!-- Hero Section -->
+  <section class="hero" id="home">
+    <!-- CHANGE IMAGE HERE: Edit the src below to change the background image -->
+    <img src="image/mm.jpeg"Government building" class="hero-bg-image">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1 class="hero-title">Local Administration Management System</h1>
+      <p class="hero-subtitle">Digital transformation for modern governance</p>
+      <div class="hero-buttons">
+        <a href="login.html" class="btn btn-primary btn-lg">Login</a>
+        <a href="services.html" class="btn btn-outline btn-lg">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section class="services section-padding" id="services">
+    <div class="container">
+      <div class="section-header">
+        <h2>Our Services</h2>
+        <p>Streamlined digital solutions for local governance</p>
+      </div>
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="service-icon"><i class="fas fa-user-check"></i></div>
+          <h3>Citizen Registration</h3>
+          <p>Digital enrollment for all residents.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon"><i class="fas fa-file-alt"></i></div>
+          <h3>Document Requests</h3>
+          <p>Apply for certificates online.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon"><i class="fas fa-money-check-alt"></i></div>
+          <h3>Payments</h3>
+          <p>Secure tracking of service charges.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon"><i class="fas fa-bullhorn"></i></div>
+          <h3>Announcements</h3>
+          <p>Real-time community updates.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats section-padding">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-number" data-target="1250">0</span>
+          <span class="stat-label">Registered Citizens</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number" data-target="890">0</span>
+          <span class="stat-label">Documents Issued</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number" data-target="145">0</span>
+          <span class="stat-label">Announcements</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number" data-target="2100">0</span>
+          <span class="stat-label">Services Completed</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section class="about-preview section-padding" id="about">
+    <div class="container">
+      <div class="section-header">
+        <h2>About Our Administration</h2>
+        <p>Dedicated to serving our community with integrity.</p>
+      </div>
+      <div class="about-content">
+        <p>The Local Administration Office leverages the LAMS platform to bring services closer to you, ensuring every resident has seamless access to essential government resources.</p>
+        <a href="about.html" class="btn btn-primary">Read More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="contact-preview section-padding bg-light" id="contact">
+    <div class="container">
+      <div class="section-header">
+        <h2>Contact Us</h2>
+        <p>We are here to assist you</p>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-card">
+          <i class="fas fa-phone-alt"></i>
+          <h3>Phone</h3>
+          <p>+255 123 456 789</p>
+        </div>
+        <div class="contact-card">
+          <i class="fas fa-envelope"></i>
+          <h3>Email</h3>
+          <p>info@lams.go.tz</p>
+        </div>
+        <div class="contact-card">
+          <i class="fas fa-map-marker-alt"></i>
+          <h3>Office</h3>
+          <p>123 Mtaa Street, Dar es Salaam</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-bottom">
+      <p>&copy; <span id="year"></span> Local Administration Management System. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <button id="backToTop" class="back-to-top"><i class="fas fa-arrow-up"></i></button>
+
+  <script src="js/index.js"></script>
+</body>
+</html>

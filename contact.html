@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Contact LAMS - Get in touch with your local administration office for support, inquiries, and service assistance.">
+  <title>Contact Us | LAMS</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- CSS File -->
+  <link rel="stylesheet" href="css/contact.css">
+</head>
+<body>
+  <!-- ==================== STICKY NAVIGATION BAR ==================== -->
+  <header class="navbar" id="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="logo" aria-label="LAMS Home">
+        <i class="fas fa-landmark"></i>
+        <span class="logo-text">LAMS</span>
+      </a>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+      <nav class="nav-menu" id="navMenu">
+        <ul class="nav-list">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="about.html" class="nav-link">About</a></li>
+          <li><a href="announce.html" class="nav-link">Announcements</a></li>
+          <li><a href="contact.html" class="nav-link active">Contact</a></li>
+          <li class="mobile-only">
+            <a href="login.html" class="btn btn-primary mobile-login-btn">Login</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button id="languageToggle" class="icon-btn" aria-label="Switch language" title="English/Swahili">
+          <i class="fas fa-language"></i>
+          <span class="lang-text">EN</span>
+        </button>
+        <button id="themeToggle" class="icon-btn" aria-label="Toggle dark/light mode">
+          <i class="fas fa-moon"></i>
+        </button>
+        <a href="login.html" class="btn btn-primary desktop-login-btn">Login</a>
+      </div>
+    </div>
+  </header>
+  <div class="menu-overlay" id="menuOverlay"></div>
+
+  <main>
+    <!-- ==================== PAGE HEADER ==================== -->
+    <section class="page-header" id="pageHeader">
+      <div class="container">
+        <h1 id="pageTitle">Contact Us</h1>
+        <p id="pageSubtitle">We are here to help you</p>
+      </div>
+    </section>
+
+    <!-- ==================== CONTACT INFORMATION CARDS ==================== -->
+    <section class="contact-info-section">
+      <div class="container">
+        <div class="section-header scroll-reveal">
+          <h2 id="contactInfoTitle">Get In Touch</h2>
+        </div>
+        <div class="info-cards-grid">
+          <div class="info-card scroll-reveal">
+            <div class="info-icon"><i class="fas fa-phone-alt"></i></div>
+            <h3 id="phoneTitle">Phone</h3>
+            <p>+255 123 456 789</p>
+            <p class="info-note" id="phoneNote">Available during working hours</p>
+          </div>
+          <div class="info-card scroll-reveal">
+            <div class="info-icon"><i class="fas fa-envelope"></i></div>
+            <h3 id="emailTitle">Email</h3>
+            <p>info@lams.go.tz</p>
+            <p class="info-note" id="emailNote">We respond within 24 hours</p>
+          </div>
+          <div class="info-card scroll-reveal">
+            <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
+            <h3 id="locationTitle">Location</h3>
+            <p>Mpendae,<br>Zanzibar, Tanzania</p>
+            <p class="info-note" id="locationNote">Local Government Building</p>
+          </div>
+          <div class="info-card scroll-reveal">
+            <div class="info-icon"><i class="fas fa-clock"></i></div>
+            <h3 id="hoursTitle">Working Hours</h3>
+            <p>Mon – Fri: 8:00 AM – 5:00 PM</p>
+            <p class="info-note" id="hoursNote">Weekend: Emergency only</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== CONTACT FORM SECTION ==================== -->
+    <section class="contact-form-section">
+      <div class="container">
+        <div class="section-header scroll-reveal">
+          <h2 id="formTitle">Send Us a Message</h2>
+        </div>
+        <div class="form-container scroll-reveal">
+          <form id="contactForm" class="contact-form" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="fullName" id="fullNameLabel">Full Name <span class="required">*</span></label>
+                <div class="input-wrapper">
+                  <i class="fas fa-user"></i>
+                  <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
+                </div>
+                <span class="error-message" id="fullNameError"></span>
+              </div>
+              <div class="form-group">
+                <label for="email" id="emailLabel">Email Address <span class="required">*</span></label>
+                <div class="input-wrapper">
+                  <i class="fas fa-envelope"></i>
+                  <input type="email" id="email" name="email" placeholder="Enter your email address" required>
+                </div>
+                <span class="error-message" id="emailError"></span>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="phone" id="phoneLabel">Phone Number</label>
+                <div class="input-wrapper">
+                  <i class="fas fa-phone"></i>
+                  <input type="tel" id="phone" name="phone" placeholder="Enter your phone number">
+                </div>
+                <span class="error-message" id="phoneError"></span>
+              </div>
+              <div class="form-group">
+                <label for="subject" id="subjectLabel">Subject <span class="required">*</span></label>
+                <div class="input-wrapper">
+                  <i class="fas fa-tag"></i>
+                  <select id="subject" name="subject" required>
+                    <option value="" data-en="Select a subject" data-sw="Chagua mada">Select a subject</option>
+                    <option value="general" data-en="General Inquiry" data-sw="Uchunguzi wa Jumla">General Inquiry</option>
+                    <option value="document" data-en="Document Application" data-sw="Maombi ya Hati">Document Application</option>
+                    <option value="payment" data-en="Payment Issue" data-sw="Suala la Malipo">Payment Issue</option>
+                    <option value="complaint" data-en="Complaint" data-sw="Malalamiko">Complaint</option>
+                    <option value="suggestion" data-en="Suggestion" data-sw="Pendekezo">Suggestion</option>
+                    <option value="other" data-en="Other" data-sw="Nyingine">Other</option>
+                  </select>
+                </div>
+                <span class="error-message" id="subjectError"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="message" id="messageLabel">Message <span class="required">*</span></label>
+              <div class="input-wrapper textarea-wrapper">
+                <i class="fas fa-comment"></i>
+                <textarea id="message" name="message" rows="5" placeholder="Write your message here..." required></textarea>
+              </div>
+              <span class="error-message" id="messageError"></span>
+            </div>
+            <button type="submit" class="btn btn-primary btn-submit" id="submitBtn">
+              <i class="fas fa-paper-plane"></i> Send Message
+            </button>
+          </form>
+          <div class="form-success" id="formSuccess">
+            <i class="fas fa-check-circle"></i>
+            <h3 id="successTitle">Message Sent Successfully!</h3>
+            <p id="successText">Thank you for contacting us. We will get back to you shortly.</p>
+            <button class="btn btn-primary" id="sendAnother">Send Another Message</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== OFFICE LOCATION ==================== -->
+    <section class="location-section">
+      <div class="container">
+        <div class="section-header scroll-reveal">
+          <h2 id="locationSectionTitle">Our Location</h2>
+        </div>
+        <div class="location-card scroll-reveal">
+          <div class="location-info">
+            <i class="fas fa-building"></i>
+            <div>
+              <h3 id="officeName">Local Administration Office</h3>
+              <p>Mpendae, Local Government Building</p>
+              <p>Zanzibar, Tanzania</p>
+            </div>
+          </div>
+          <div class="map-container" id="mapContainer">
+            <!-- Map loaded via JavaScript -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SOCIAL MEDIA ==================== -->
+    <section class="social-section">
+      <div class="container">
+        <div class="section-header scroll-reveal">
+          <h2 id="socialTitle">Connect With Us</h2>
+        </div>
+        <div class="social-icons-row scroll-reveal">
+          <a href="#" class="social-icon-link" aria-label="Facebook">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a href="#" class="social-icon-link" aria-label="Instagram">
+            <i class="fab fa-instagram"></i>
+          </a>
+          <a href="#" class="social-icon-link" aria-label="X (Twitter)">
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a href="#" class="social-icon-link" aria-label="WhatsApp">
+            <i class="fab fa-whatsapp"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== FAQ SECTION ==================== -->
+    <section class="faq-section">
+      <div class="container">
+        <div class="section-header scroll-reveal">
+          <h2 id="faqTitle">Frequently Asked Questions</h2>
+        </div>
+        <div class="faq-list">
+          <div class="faq-item scroll-reveal">
+            <button class="faq-question" aria-expanded="false">
+              <span id="faq1Question">How can I contact the administration?</span>
+              <i class="fas fa-plus"></i>
+            </button>
+            <div class="faq-answer">
+              <p id="faq1Answer">Call us at +255 123 456 789, email info@lams.go.tz, or visit our office during working hours.</p>
+            </div>
+          </div>
+          <div class="faq-item scroll-reveal">
+            <button class="faq-question" aria-expanded="false">
+              <span id="faq2Question">What services can I request?</span>
+              <i class="fas fa-plus"></i>
+            </button>
+            <div class="faq-answer">
+              <p id="faq2Answer">You can request citizen registration, document applications, payment processing, and general inquiries.</p>
+            </div>
+          </div>
+          <div class="faq-item scroll-reveal">
+            <button class="faq-question" aria-expanded="false">
+              <span id="faq3Question">How long does a response take?</span>
+              <i class="fas fa-plus"></i>
+            </button>
+            <div class="faq-answer">
+              <p id="faq3Answer">We respond to all inquiries within 24 hours during working days.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== CALL TO ACTION ==================== -->
+    <section class="cta-section">
+      <div class="container cta-content scroll-reveal">
+        <h2 id="ctaTitle">Need Assistance?</h2>
+        <p id="ctaText">Contact our administration team today</p>
+        <div class="cta-buttons">
+          <a href="#contactForm" class="btn btn-primary btn-lg" id="ctaMessageBtn">
+            <i class="fas fa-paper-plane"></i> Send Message
+          </a>
+          <a href="login.html" class="btn btn-outline btn-lg" id="ctaLoginBtn">
+            <i class="fas fa-sign-in-alt"></i> Login
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer">
+    <div class="container footer-bottom">
+      <p>&copy; <span id="year"></span> Local Administration Management System. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Back to Top Button -->
+  <button id="backToTop" class="back-to-top" aria-label="Back to top">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <!-- JavaScript File -->
+  <script src="js/contact.js"></script>
+</body>
+</html>

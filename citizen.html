@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Citizen Portal | LAMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="css/citizen.css">
+</head>
+<body>
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Logout Confirmation Modal -->
+  <div class="modal-overlay" id="logoutModalOverlay">
+    <div class="modal" id="logoutModal">
+      <div class="modal-content" style="text-align:center;">
+        <i class="fas fa-sign-out-alt" style="font-size:3.5rem;color:#ef4444;margin-bottom:15px;"></i>
+        <h2>Logout Confirmation</h2>
+        <p style="margin-bottom:20px;color:var(--text-light);">Are you sure you want to logout from your account?</p>
+        <div style="display:flex;gap:12px;justify-content:center;">
+          <button class="btn btn-outline" id="logoutCancelBtn">Cancel</button>
+          <button class="btn" style="background:#ef4444;color:#fff;border-color:#ef4444;" id="logoutConfirmBtn">Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal-overlay" id="paymentModalOverlay">
+    <div class="modal" id="paymentModal">
+      <div class="modal-content" id="paymentModalContent">
+        <button class="modal-close modal-close-btn" id="paymentModalCloseBtn">&times;</button>
+        <h2><i class="fas fa-credit-card"></i> Make Payment</h2>
+        <div id="paymentDetails"></div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="paymentMethod">
+            <option value="mobile">📱 Mobile Money (M-Pesa/Tigo Pesa)</option>
+            <option value="bank">🏦 Bank Transfer</option>
+            <option value="card">💳 Credit/Debit Card</option>
+          </select>
+        </div>
+        <div id="paymentMethodDetails">
+          <div class="form-group"><label>Phone Number</label><input type="text" placeholder="e.g. 255 7XX XXX XXX"></div>
+        </div>
+        <button class="btn btn-primary btn-full" id="processPaymentBtn"><i class="fas fa-lock"></i> Pay Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Announcement Detail Modal -->
+  <div class="modal-overlay" id="announcementModalOverlay">
+    <div class="modal" id="announcementModal">
+      <div class="modal-content" id="announcementContent"></div>
+    </div>
+  </div>
+
+  <!-- Profile Edit Modal -->
+  <div class="modal-overlay" id="profileEditModalOverlay">
+    <div class="modal" id="profileEditModal">
+      <div class="modal-content" id="profileEditModalContent">
+        <button class="modal-close modal-close-btn" id="profileEditCloseBtn">&times;</button>
+        <h2><i class="fas fa-user-edit"></i> Edit Profile</h2>
+        <form id="profileEditForm">
+          <div class="form-group"><label>Full Name</label><input type="text" id="editProfileName" required></div>
+          <div class="form-group"><label>Email</label><input type="email" id="editProfileEmail" required></div>
+          <div class="form-group"><label>Phone</label><input type="text" id="editProfilePhone" required></div>
+          <div class="form-group"><label>Address</label><input type="text" id="editProfileAddress"></div>
+          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-save"></i> Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div class="modal-overlay" id="passwordModalOverlay">
+    <div class="modal" id="passwordModal">
+      <div class="modal-content" id="passwordModalContent">
+        <button class="modal-close modal-close-btn" id="passwordModalCloseBtn">&times;</button>
+        <h2><i class="fas fa-lock"></i> Change Password</h2>
+        <form id="passwordChangeForm">
+          <div class="form-group"><label>Current Password</label><input type="password" id="currentPassword" required></div>
+          <div class="form-group"><label>New Password</label><input type="password" id="newPassword" required minlength="6"></div>
+          <div class="form-group"><label>Confirm New Password</label><input type="password" id="confirmPassword" required></div>
+          <div id="passwordStrength" style="margin-bottom:10px;"></div>
+          <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-key"></i> Change Password</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Detail Modal -->
+  <div class="modal-overlay" id="appDetailModalOverlay">
+    <div class="modal" id="appDetailModal">
+      <div class="modal-content" id="appDetailContent"></div>
+    </div>
+  </div>
+
+  <!-- New Application Modal - FIXED -->
+  <div class="modal-overlay" id="appModalOverlay"></div>
+  <div class="modal" id="appModal">
+    <div class="modal-content" id="appModalContent">
+      <button class="modal-close modal-close-btn" id="appModalCloseBtn">&times;</button>
+      <h2>New Document Application</h2>
+      <form id="applicationForm">
+        <div class="form-group"><label>Document Type *</label><select id="appDocType" required><option value="">Select document type</option><option value="Residence Confirmation Letter">Residence Confirmation Letter</option><option value="Identity Confirmation Letter">Identity Confirmation Letter</option><option value="Business Permit Support Letter">Business Permit Support Letter</option><option value="Recommendation Letter">Recommendation Letter</option><option value="Custom Request">Custom Request</option></select></div>
+        <div class="form-group"><label>Reason for Application</label><textarea id="appReason" rows="3" placeholder="Briefly describe why you need this document..."></textarea></div>
+        <div class="form-group"><label>Additional Notes</label><textarea id="appNotes" rows="2" placeholder="Any additional information..."></textarea></div>
+        <div style="display:flex;gap:10px;">
+          <button type="button" class="btn btn-outline" id="appModalCancelBtn" style="flex:1;">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex:2;">Submit Application</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="citizen-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header"><i class="fas fa-landmark"></i><span>LAMS Portal</span></div>
+      <div class="sidebar-profile">
+        <div class="sidebar-avatar" id="sidebarAvatar">
+          <img src="https://ui-avatars.com/api/?name=Maria+Joseph&background=0066cc&color=fff&size=60" alt="Citizen" id="sidebarAvatarImg">
+        </div>
+        <div class="sidebar-profile-info">
+          <strong id="sidebarCitizenName">Maria Joseph</strong>
+          <small>Citizen</small>
+          <span class="status-indicator online"><i class="fas fa-circle"></i> Active</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="sidebar-link active" data-page="dashboard"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
+        <a href="#" class="sidebar-link" data-page="applications"><i class="fas fa-file-alt"></i><span>My Applications</span><span class="sidebar-badge" id="appBadge">0</span></a>
+        <a href="#" class="sidebar-link" data-page="payments"><i class="fas fa-money-bill-wave"></i><span>Payments</span><span class="sidebar-badge" id="paymentBadge">0</span></a>
+        <a href="#" class="sidebar-link" data-page="messages"><i class="fas fa-comments"></i><span>Messages</span><span class="sidebar-badge" id="msgBadge">0</span></a>
+        <a href="#" class="sidebar-link" data-page="announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span></a>
+        <a href="#" class="sidebar-link" data-page="documents"><i class="fas fa-folder-open"></i><span>My Documents</span></a>
+        <a href="#" class="sidebar-link" data-page="profile"><i class="fas fa-user-circle"></i><span>Profile</span></a>
+        <a href="#" class="sidebar-link" data-page="help"><i class="fas fa-question-circle"></i><span>Help & Support</span></a>
+        <a href="#" class="sidebar-link logout-link" id="logoutSidebarBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <header class="top-navbar">
+        <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+        <div class="search-bar"><i class="fas fa-search"></i><input type="text" placeholder="Search services..." id="citizenSearch"></div>
+        <div class="top-nav-actions">
+          <button id="languageToggle" class="icon-btn"><i class="fas fa-language"></i><span class="lang-text">EN</span></button>
+          <button id="themeToggle" class="icon-btn"><i class="fas fa-moon"></i></button>
+          <button class="icon-btn notification-btn" id="notificationBtn"><i class="fas fa-bell"></i><span class="badge" id="notifBadge">0</span></button>
+          <div class="user-profile-dropdown">
+            <button class="user-profile-btn" id="userDropdownBtn"><i class="fas fa-user-circle"></i><span id="headerUserName">Maria</span><i class="fas fa-chevron-down"></i></button>
+            <div class="profile-dropdown-menu" id="userDropdownMenu">
+              <a href="#" data-page="profile"><i class="fas fa-user"></i> My Profile</a>
+              <a href="#" data-page="help"><i class="fas fa-question-circle"></i> Help</a>
+              <a href="#" id="logoutDropdownBtn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Notification Dropdown -->
+      <div class="notification-dropdown" id="notificationDropdown">
+        <div class="notif-header"><h3>Notifications</h3><button class="mark-all-read" id="markAllRead">Mark all read</button></div>
+        <div class="notif-list" id="notifList"><p class="no-notifications">No new notifications</p></div>
+      </div>
+
+      <!-- Page Content -->
+      <div class="page-content-wrapper">
+        <section class="page-content active" id="page-dashboard">
+          <div class="welcome-card">
+            <div class="welcome-left">
+              <div class="welcome-avatar"><i class="fas fa-user-circle" id="dashboardAvatar"></i></div>
+              <div>
+                <h1>Welcome back, <span id="dashboardCitizenName">Maria Joseph</span>!</h1>
+                <p>Access your services, applications, payments, and community updates in one place.</p>
+                <span class="status-badge status-active">Account Active</span>
+              </div>
+            </div>
+            <div class="welcome-right">
+              <div class="quick-stat"><span class="quick-stat-number" id="dashPending">0</span><span class="quick-stat-label">Pending</span></div>
+              <div class="quick-stat"><span class="quick-stat-number" id="dashCompleted">0</span><span class="quick-stat-label">Completed</span></div>
+              <div class="quick-stat"><span class="quick-stat-number" id="dashUnread">0</span><span class="quick-stat-label">Messages</span></div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-bottom:20px;font-size:1.1rem;color:var(--text-light);">
+            <span id="realTimeClock"></span> | <span id="realTimeDate"></span>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card"><div class="stat-icon"><i class="fas fa-file-alt"></i></div><div class="stat-info"><span class="stat-number" data-target="0" id="statTotalApps">0</span><span class="stat-label">Total Applications</span></div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#f59e0b;"><i class="fas fa-clock"></i></div><div class="stat-info"><span class="stat-number" data-target="0" id="statPending">0</span><span class="stat-label">Pending</span></div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#00b894;"><i class="fas fa-check-circle"></i></div><div class="stat-info"><span class="stat-number" data-target="0" id="statApproved">0</span><span class="stat-label">Approved</span></div></div>
+            <div class="stat-card"><div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div><div class="stat-info"><span class="stat-number" data-target="0" id="statPayments">0</span><span class="stat-label">Payments Made</span></div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#f59e0b;"><i class="fas fa-envelope"></i></div><div class="stat-info"><span class="stat-number" data-target="0" id="statUnread">0</span><span class="stat-label">Unread Messages</span></div></div>
+            <div class="stat-card"><div class="stat-icon" style="color:#8b5cf6;"><i class="fas fa-bell"></i></div><div class="stat-info"><span class="stat-number" data-target="0" id="statNotifs">0</span><span class="stat-label">Notifications</span></div></div>
+          </div>
+          <h2 class="section-subtitle">Quick Actions</h2>
+          <div class="quick-actions-grid">
+            <button class="quick-action-card" data-page="applications"><i class="fas fa-plus-circle"></i><span>New Application</span><small>Apply for documents</small></button>
+            <button class="quick-action-card" data-page="payments"><i class="fas fa-credit-card"></i><span>Make Payment</span><small>Pay service fees</small></button>
+            <button class="quick-action-card" data-page="messages"><i class="fas fa-comment-dots"></i><span>Messages</span><small>Chat with admin</small></button>
+            <button class="quick-action-card" data-page="announcements"><i class="fas fa-bullhorn"></i><span>Announcements</span><small>Community updates</small></button>
+            <button class="quick-action-card" data-page="documents"><i class="fas fa-download"></i><span>My Documents</span><small>Download files</small></button>
+            <button class="quick-action-card" data-page="profile"><i class="fas fa-user-edit"></i><span>Update Profile</span><small>Edit information</small></button>
+          </div>
+          <h2 class="section-subtitle">Recent Activity</h2>
+          <div class="card"><div class="activity-list" id="dashboardActivityList"></div></div>
+        </section>
+
+        <section class="page-content" id="page-applications">
+          <div class="page-header"><h1 class="page-title">My Applications</h1><button class="btn btn-primary" id="newApplicationBtn"><i class="fas fa-plus"></i> New Application</button></div>
+          <div class="filter-row">
+            <select id="appStatusFilter"><option value="all">All Applications</option><option value="Pending">Pending</option><option value="Processing">Processing</option><option value="Approved">Approved</option><option value="Rejected">Rejected</option></select>
+          </div>
+          <div class="table-container"><table><thead><tr><th>App ID</th><th>Document Type</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="appTableBody"></tbody></table></div>
+        </section>
+
+        <section class="page-content" id="page-payments">
+          <h1 class="page-title">My Payments</h1>
+          <div class="balance-alert-card" id="outstandingBalanceCard" style="display:none;">
+            <div><h3><i class="fas fa-exclamation-circle"></i> Outstanding Balance</h3><p class="balance-amount" id="outstandingAmount">TZS 0</p><p class="balance-note">You have unpaid payment records</p></div>
+          </div>
+          <div class="filter-row">
+            <select id="paymentStatusFilter"><option value="all">All Payments</option><option value="Paid">Paid</option><option value="Unpaid">Unpaid</option></select>
+            <input type="text" placeholder="Search payments..." id="paymentSearchInput" class="search-input-inline">
+          </div>
+          <div class="table-container"><table><thead><tr><th>Payment ID</th><th>Document Type</th><th>Description</th><th>Amount</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="paymentTableBody"></tbody></table></div>
+          <div class="pagination" id="paymentPagination"></div>
+          <h2 class="section-subtitle">Payment History</h2>
+          <div class="table-container"><table><thead><tr><th>Payment ID</th><th>Document</th><th>Amount</th><th>Payment Date</th><th>Method</th><th>Status</th></tr></thead><tbody id="paymentHistoryBody"></tbody></table></div>
+        </section>
+
+        <!-- Messages Page - FIXED CHAT -->
+        <section class="page-content" id="page-messages">
+          <h1 class="page-title">Messages</h1>
+          <div class="chat-layout">
+            <div class="inbox">
+              <div class="inbox-item active" data-chat="admin"><i class="fas fa-user-tie"></i><div><strong>Local Administrator</strong><small>Your application has been...</small></div><span class="unread-count" id="adminUnread">0</span></div>
+              <div class="inbox-item" data-chat="support"><i class="fas fa-headset"></i><div><strong>Support Assistant</strong><small>How can I help you today?</small></div></div>
+            </div>
+            <div class="chat-window">
+              <div class="chat-header"><i class="fas fa-user-tie" id="chatHeaderIcon"></i><div><span id="citizenChatContactName">Local Administrator</span><small class="online-status"><i class="fas fa-circle"></i> Online</small></div></div>
+              <div class="chat-body" id="citizenChatBody"></div>
+              <div class="chat-footer"><input type="text" id="citizenChatInput" placeholder="Type your message..."><button id="citizenSendBtn"><i class="fas fa-paper-plane"></i></button></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="page-content" id="page-announcements">
+          <h1 class="page-title">Community Announcements</h1>
+          <div class="filter-row">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="notice">Notices</button>
+            <button class="filter-btn" data-filter="event">Events</button>
+            <button class="filter-btn" data-filter="alert">Alerts</button>
+          </div>
+          <div class="announcements-grid" id="citizenAnnouncementGrid"></div>
+        </section>
+
+        <section class="page-content" id="page-documents">
+          <h1 class="page-title">My Documents</h1>
+          <p class="page-description">Download your approved and issued documents</p>
+          <div class="table-container"><table><thead><tr><th>Document</th><th>Document ID</th><th>Type</th><th>Issue Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="documentsTableBody"></tbody></table></div>
+        </section>
+
+        <section class="page-content" id="page-profile">
+          <h1 class="page-title">My Profile</h1>
+          <div class="profile-full-card">
+            <div class="profile-avatar-section">
+              <img src="https://ui-avatars.com/api/?name=Maria+Joseph&background=0066cc&color=fff&size=120" alt="Profile" id="profileAvatarImg" style="border-radius:50%;width:120px;height:120px;border:4px solid var(--primary);">
+              <h2 id="profileDisplayName">Maria Joseph</h2>
+              <p>Citizen</p>
+              <span class="status-badge status-active">Account Active</span>
+              <button class="btn btn-outline" onclick="document.getElementById('profilePhotoUpload').click()" style="margin-top:10px;"><i class="fas fa-camera"></i> Change Photo</button>
+              <input type="file" id="profilePhotoUpload" accept="image/*" style="display:none;">
+            </div>
+            <div class="profile-info-grid">
+              <div class="profile-info-item"><strong>Full Name:</strong> <span id="profileName">Maria Joseph</span></div>
+              <div class="profile-info-item"><strong>Email:</strong> <span id="profileEmail">maria.joseph@email.com</span></div>
+              <div class="profile-info-item"><strong>Phone:</strong> <span id="profilePhone">+255 765 432 109</span></div>
+              <div class="profile-info-item"><strong>Address:</strong> <span id="profileAddress">45 Mtaa Street, Dar es Salaam</span></div>
+              <div class="profile-info-item"><strong>National ID:</strong> TZ-1990-12345678</div>
+              <div class="profile-info-item"><strong>Registered Since:</strong> January 15, 2025</div>
+            </div>
+            <div class="profile-actions">
+              <button class="btn btn-primary" id="openProfileEditBtn"><i class="fas fa-edit"></i> Edit Profile</button>
+              <button class="btn btn-outline" id="openPasswordBtn"><i class="fas fa-lock"></i> Change Password</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="page-content" id="page-help">
+          <h1 class="page-title">Help & Support</h1>
+          <div class="help-grid">
+            <div class="help-card"><i class="fas fa-headset"></i><h3>Contact Admin</h3><p>Reach out to the local administrator for assistance.</p><button class="btn btn-primary" onclick="showToast('info','Opening contact form...')">Contact Now</button></div>
+            <div class="help-card"><i class="fas fa-question-circle"></i><h3>FAQ</h3><p>Find answers to commonly asked questions.</p><button class="btn btn-outline" onclick="showFAQ()">View FAQ</button></div>
+            <div class="help-card"><i class="fas fa-bug"></i><h3>Report Issue</h3><p>Report a technical problem with the system.</p><button class="btn btn-outline" onclick="showToast('info','Opening issue report form...')">Report</button></div>
+            <div class="help-card"><i class="fas fa-book"></i><h3>System Guide</h3><p>Learn how to use all features of the citizen portal.</p><button class="btn btn-outline" onclick="showToast('info','Opening system guide...')">View Guide</button></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <button id="backToTop" class="back-to-top"><i class="fas fa-arrow-up"></i></button>
+  <script src="js/citizen.js"></script>
+</body>
+</html>

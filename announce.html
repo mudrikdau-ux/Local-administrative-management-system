@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="LAMS Announcements - Stay updated with the latest community news, public notices, and events from your local administration.">
+  <title>Announcements | LAMS</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- CSS File -->
+  <link rel="stylesheet" href="css/announce.css">
+</head>
+<body>
+  <!-- ==================== STICKY NAVIGATION BAR ==================== -->
+  <header class="navbar" id="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="logo" aria-label="LAMS Home">
+        <i class="fas fa-landmark"></i>
+        <span class="logo-text">LAMS</span>
+      </a>
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+      <nav class="nav-menu" id="navMenu">
+        <ul class="nav-list">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="about.html" class="nav-link">About</a></li>
+          <li><a href="announce.html" class="nav-link active">Announcements</a></li>
+          <li><a href="contact.html" class="nav-link">Contact</a></li>
+          <li class="mobile-only">
+            <a href="login.html" class="btn btn-primary mobile-login-btn">Login</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button id="languageToggle" class="icon-btn" aria-label="Switch language" title="English/Swahili">
+          <i class="fas fa-language"></i>
+          <span class="lang-text">EN</span>
+        </button>
+        <button id="themeToggle" class="icon-btn" aria-label="Toggle dark/light mode">
+          <i class="fas fa-moon"></i>
+        </button>
+        <a href="login.html" class="btn btn-primary desktop-login-btn">Login</a>
+      </div>
+    </div>
+  </header>
+  <div class="menu-overlay" id="menuOverlay"></div>
+
+  <main>
+    <!-- ==================== PAGE HEADER ==================== -->
+    <section class="page-header">
+      <div class="container">
+        <h1 id="pageTitle">Announcements</h1>
+        <p id="pageSubtitle">Stay informed with the latest updates from your local administration</p>
+      </div>
+    </section>
+
+    <!-- ==================== SEARCH AND FILTER SECTION ==================== -->
+    <section class="search-filter-section">
+      <div class="container">
+        <div class="search-filter-bar">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search announcements by title..." aria-label="Search announcements">
+            <button id="clearSearch" class="clear-btn" style="display: none;" aria-label="Clear search">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="filter-group">
+            <select id="categoryFilter" aria-label="Filter by category">
+              <option value="all" data-en="All Categories" data-sw="Makundi Yote">All Categories</option>
+              <option value="general" data-en="General Announcements" data-sw="Matangazo ya Jumla">General Announcements</option>
+              <option value="notice" data-en="Community Notices" data-sw="Notisi za Jamii">Community Notices</option>
+              <option value="event" data-en="Events" data-sw="Matukio">Events</option>
+              <option value="emergency" data-en="Emergency Notices" data-sw="Notisi za Dharura">Emergency Notices</option>
+              <option value="meeting" data-en="Community Meetings" data-sw="Mikutano ya Jamii">Community Meetings</option>
+              <option value="development" data-en="Development Projects" data-sw="Miradi ya Maendeleo">Development Projects</option>
+            </select>
+          </div>
+        </div>
+        <div class="results-info" id="resultsInfo">
+          <span id="resultsCount">0</span> <span id="resultsLabel">announcements found</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== ANNOUNCEMENTS GRID ==================== -->
+    <section class="announcements-section">
+      <div class="container">
+        <div class="announcement-grid" id="announcementGrid">
+          <!-- Announcement cards will be populated by JavaScript -->
+        </div>
+        <div class="no-results" id="noResults" style="display: none;">
+          <i class="fas fa-bullhorn"></i>
+          <h3 id="noResultsTitle">No announcements found</h3>
+          <p id="noResultsText">Try adjusting your search or filter criteria</p>
+        </div>
+        <div class="loading-indicator" id="loadingIndicator" style="display: none;">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p id="loadingText">Loading announcements...</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== LOGIN REQUIRED MODAL ==================== -->
+  <div class="modal-overlay" id="loginModalOverlay"></div>
+  <div class="modal login-modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+    <div class="modal-content">
+      <button class="modal-close" id="loginModalClose" aria-label="Close modal">&times;</button>
+      <div class="modal-icon">
+        <i class="fas fa-lock"></i>
+      </div>
+      <h2 id="loginModalTitle">Login Required</h2>
+      <p id="loginModalText">Please login to view the full announcement details.</p>
+      <div class="modal-actions">
+        <a href="login.html" class="btn btn-primary" id="loginNowBtn">Login Now</a>
+        <button class="btn btn-outline" id="loginCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ANNOUNCEMENT DETAILS MODAL ==================== -->
+  <div class="modal-overlay" id="detailsModalOverlay"></div>
+  <div class="modal details-modal" id="detailsModal" role="dialog" aria-modal="true" aria-labelledby="detailsModalTitle">
+    <div class="modal-content">
+      <button class="modal-close" id="detailsModalClose" aria-label="Close modal">&times;</button>
+      <div class="modal-image">
+        <img id="detailsModalImage" src="" alt="Announcement image">
+      </div>
+      <div class="modal-body">
+        <span class="announcement-category" id="detailsModalCategory"></span>
+        <h2 id="detailsModalTitle"></h2>
+        <div class="announcement-meta">
+          <span class="announcement-date" id="detailsModalDate"></span>
+          <span class="announcement-author" id="detailsModalAuthor" style="display: none;"></span>
+        </div>
+        <div class="modal-full-content" id="detailsModalContent"></div>
+        <div class="modal-share">
+          <span id="shareLabel">Share:</span>
+          <a href="#" aria-label="Share on Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" aria-label="Share on Twitter"><i class="fab fa-twitter"></i></a>
+          <a href="#" aria-label="Share on WhatsApp"><i class="fab fa-whatsapp"></i></a>
+          <a href="#" aria-label="Share via Email"><i class="fas fa-envelope"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer">
+    <div class="container footer-bottom">
+      <p>&copy; <span id="year"></span> Local Administration Management System. All rights reserved.</p>
+    </div>
+  </footer>
+   <!-- Back to Top Button -->
+  <button id="backToTop" class="back-to-top" aria-label="Back to top">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <!-- JavaScript File -->
+  <script src="js/announce.js"></script>
+</body>
+</html>

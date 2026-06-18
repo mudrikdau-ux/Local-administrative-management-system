@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="About LAMS - Local Administration Management System.">
+  <title>About Us | LAMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="css/about.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <header class="navbar" id="navbar">
+    <div class="container nav-container">
+      <a href="index.html" class="logo">
+        <i class="fas fa-landmark"></i>
+        <span>LAMS</span>
+      </a>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+      <nav class="nav-menu" id="navMenu">
+        <ul class="nav-list">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="about.html" class="nav-link active">About</a></li>
+          <li><a href="announce.html" class="nav-link">Announcements</a></li>
+          <li><a href="contact.html" class="nav-link">Contact</a></li>
+          <li class="mobile-only"><a href="login.html" class="btn btn-primary mobile-login-btn">Login</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button id="languageToggle" class="icon-btn" title="Switch Language">
+          <i class="fas fa-language"></i>
+          <span class="lang-text">EN</span>
+        </button>
+        <button id="themeToggle" class="icon-btn" title="Toggle Theme">
+          <i class="fas fa-moon"></i>
+        </button>
+        <a href="login.html" class="btn btn-primary desktop-login-btn">Login</a>
+      </div>
+    </div>
+  </header>
+  <div class="menu-overlay" id="menuOverlay"></div>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="about-hero">
+      <!-- CHANGE IMAGE HERE: Edit the src below -->
+      <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80" alt="Administration office" class="hero-bg-image">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <h1 class="hero-title">About LAMS</h1>
+        <p class="hero-subtitle">Digital platform for modern local governance</p>
+      </div>
+    </section>
+
+    <!-- About System -->
+    <section class="about-system section-padding">
+      <div class="container">
+        <div class="section-header">
+          <h2>What is LAMS?</h2>
+        </div>
+        <div class="about-content">
+          <p>The Local Administration Management System (LAMS) is a web-based platform that modernizes how local governments serve their communities. It centralizes citizen records, document processing, payments, and communication into one digital hub.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mission & Vision -->
+    <section class="mission-vision section-padding bg-light">
+      <div class="container mission-vision-grid">
+        <div class="mv-card">
+          <div class="mv-icon"><i class="fas fa-bullseye"></i></div>
+          <h3>Our Mission</h3>
+          <p>To provide efficient, transparent, and accessible digital administrative services to local communities.</p>
+        </div>
+        <div class="mv-card">
+          <div class="mv-icon"><i class="fas fa-eye"></i></div>
+          <h3>Our Vision</h3>
+          <p>To become a digitally empowered local administration delivering high-quality services to all citizens.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Core Values -->
+    <section class="core-values section-padding">
+      <div class="container">
+        <div class="section-header">
+          <h2>Our Core Values</h2>
+        </div>
+        <div class="values-grid">
+          <div class="value-card">
+            <i class="fas fa-search"></i>
+            <h3>Transparency</h3>
+          </div>
+          <div class="value-card">
+            <i class="fas fa-clipboard-check"></i>
+            <h3>Accountability</h3>
+          </div>
+          <div class="value-card">
+            <i class="fas fa-balance-scale"></i>
+            <h3>Integrity</h3>
+          </div>
+          <div class="value-card">
+            <i class="fas fa-tachometer-alt"></i>
+            <h3>Efficiency</h3>
+          </div>
+          <div class="value-card">
+            <i class="fas fa-hands-helping"></i>
+            <h3>Community Service</h3>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works section-padding bg-light">
+      <div class="container">
+        <div class="section-header">
+          <h2>How It Works</h2>
+        </div>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-number">1</div>
+            <div class="timeline-content"><h3>Register</h3><p>Create your secure digital profile.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-number">2</div>
+            <div class="timeline-content"><h3>Login</h3><p>Access the system securely.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-number">3</div>
+            <div class="timeline-content"><h3>Submit Request</h3><p>Apply for documents or services.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-number">4</div>
+            <div class="timeline-content"><h3>Payment</h3><p>Complete secure online payment.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-number">5</div>
+            <div class="timeline-content"><h3>Approval</h3><p>Administrators verify and approve.</p></div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-number">6</div>
+            <div class="timeline-content"><h3>Receive Document</h3><p>Get your official document digitally.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Benefits -->
+    <section class="benefits section-padding">
+      <div class="container">
+        <div class="section-header">
+          <h2>Benefits</h2>
+        </div>
+        <div class="benefits-grid">
+          <div class="benefit-card">
+            <i class="fas fa-bolt"></i>
+            <h3>Faster Services</h3>
+            <p>Reduced processing times.</p>
+          </div>
+          <div class="benefit-card">
+            <i class="fas fa-globe"></i>
+            <h3>Online Access</h3>
+            <p>Apply from anywhere, anytime.</p>
+          </div>
+          <div class="benefit-card">
+            <i class="fas fa-comments"></i>
+            <h3>Easy Communication</h3>
+            <p>Direct messaging with officials.</p>
+          </div>
+          <div class="benefit-card">
+            <i class="fas fa-database"></i>
+            <h3>Better Records</h3>
+            <p>Secure digital databases.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats section-padding">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-number" data-target="1250">0</span>
+            <span class="stat-label">Citizens Served</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="890">0</span>
+            <span class="stat-label">Documents Issued</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="145">0</span>
+            <span class="stat-label">Announcements</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number" data-target="2100">0</span>
+            <span class="stat-label">Services Completed</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq section-padding bg-light">
+      <div class="container">
+        <div class="section-header">
+          <h2>Frequently Asked Questions</h2>
+        </div>
+        <div class="faq-list">
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              <span>How do citizens register?</span>
+              <i class="fas fa-plus"></i>
+            </button>
+            <div class="faq-answer">
+              <p>Register online through the LAMS portal with your national ID and create a secure account.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              <span>How are documents requested?</span>
+              <i class="fas fa-plus"></i>
+            </button>
+            <div class="faq-answer">
+              <p>Submit requests through online forms. Select document type, fill details, and submit for processing.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              <span>Is my information secure?</span>
+              <i class="fas fa-plus"></i>
+            </button>
+            <div class="faq-answer">
+              <p>Yes. LAMS uses enterprise-grade encryption and secure authentication to protect all data.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta section-padding">
+      <div class="container cta-content">
+        <h2>Ready to Get Started?</h2>
+        <p>Access efficient local government services today.</p>
+        <div class="cta-buttons">
+          <a href="login.html" class="btn btn-primary btn-lg">Login</a>
+          <a href="contact.html" class="btn btn-outline-white btn-lg">Contact Us</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-bottom">
+      <p>&copy; <span id="year"></span> Local Administration Management System. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <button id="backToTop" class="back-to-top"><i class="fas fa-arrow-up"></i></button>
+
+  <script src="js/about.js"></script>
+</body>
+</html>

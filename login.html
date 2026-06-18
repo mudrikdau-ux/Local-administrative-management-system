@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="LAMS Login - Secure authentication portal for Local Administration Management System">
+  <title>Login | LAMS - Local Administration Management System</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- CSS File -->
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+  <!-- ==================== TOAST CONTAINER ==================== -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ==================== TOP NAVIGATION BAR ==================== -->
+  <header class="top-bar">
+    <div class="top-bar-container">
+      <a href="index.html" class="top-logo">
+        <i class="fas fa-landmark"></i>
+        <span>LAMS</span>
+      </a>
+      <div class="top-actions">
+        <button id="languageToggle" class="icon-btn" title="Switch Language">
+          <i class="fas fa-language"></i>
+          <span class="lang-text">EN</span>
+        </button>
+        <button id="themeToggle" class="icon-btn" title="Toggle Theme">
+          <i class="fas fa-moon"></i>
+        </button>
+        <a href="index.html" class="back-home-link">
+          <i class="fas fa-home"></i> Home
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN LOGIN CONTAINER ==================== -->
+  <main class="login-main">
+    <div class="login-container">
+      
+      <!-- ===== LEFT SIDE - VISUAL / INFO PANEL ===== -->
+      <div class="login-visual">
+        <div class="visual-overlay"></div>
+        <div class="visual-content">
+          <div class="visual-logo">
+            <i class="fas fa-landmark"></i>
+          </div>
+          <h1>Local Administration Management System</h1>
+          <p class="visual-subtitle">Secure digital platform for efficient local government services and community management.</p>
+          <div class="visual-features">
+            <div class="visual-feature">
+              <i class="fas fa-shield-alt"></i>
+              <span>Secure Authentication</span>
+            </div>
+            <div class="visual-feature">
+              <i class="fas fa-lock"></i>
+              <span>OTP Verification</span>
+            </div>
+            <div class="visual-feature">
+              <i class="fas fa-user-shield"></i>
+              <span>Role-Based Access</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== RIGHT SIDE - LOGIN FORM PANEL ===== -->
+      <div class="login-form-panel">
+        <div class="form-wrapper">
+          
+          <!-- STEP 1: LOGIN FORM -->
+          <div class="form-step active" id="stepLogin">
+            <div class="form-header">
+              <div class="form-logo-mobile">
+                <i class="fas fa-landmark"></i>
+              </div>
+              <h2>Welcome Back</h2>
+              <p>Sign in to access your account</p>
+            </div>
+
+            <!-- Role Selection Tabs - Updated with Super Admin -->
+            <div class="role-tabs">
+              <button class="role-tab" data-role="superadmin">
+                <i class="fas fa-crown"></i> Super Admin
+              </button>
+              <button class="role-tab" data-role="admin">
+                <i class="fas fa-user-tie"></i> Admin
+              </button>
+              <button class="role-tab active" data-role="citizen">
+                <i class="fas fa-user"></i> Citizen
+              </button>
+            </div>
+
+            <form id="loginForm" class="login-form" novalidate>
+              <!-- Email Field -->
+              <div class="input-group">
+                <label for="loginEmail">Email Address</label>
+                <div class="input-wrapper">
+                  <i class="fas fa-envelope"></i>
+                  <input 
+                    type="email" 
+                    id="loginEmail" 
+                    placeholder="Enter your email address" 
+                    required
+                    autocomplete="email"
+                  >
+                </div>
+                <span class="error-message" id="emailError"></span>
+              </div>
+
+              <!-- Password Field -->
+              <div class="input-group">
+                <label for="loginPassword">Password</label>
+                <div class="input-wrapper">
+                  <i class="fas fa-lock"></i>
+                  <input 
+                    type="password" 
+                    id="loginPassword" 
+                    placeholder="Enter your password" 
+                    required
+                    autocomplete="current-password"
+                  >
+                  <button type="button" class="toggle-password" id="togglePassword" aria-label="Toggle password visibility">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <span class="error-message" id="passwordError"></span>
+              </div>
+
+              <!-- Remember Me & Forgot Password -->
+              <div class="form-options">
+                <label class="remember-me">
+                  <input type="checkbox" id="rememberMe">
+                  <span>Remember me</span>
+                </label>
+                <a href="#" class="forgot-password" onclick="showToast('info', 'Please contact your system administrator to reset your password.')">
+                  Forgot Password?
+                </a>
+              </div>
+
+              <!-- Submit Button -->
+              <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+                <span class="btn-text">Sign In</span>
+                <span class="btn-loader" style="display:none;">
+                  <i class="fas fa-spinner fa-spin"></i> Authenticating...
+                </span>
+              </button>
+            </form>
+
+            <!-- Demo Credentials Hint - Updated with Super Admin -->
+            <div class="demo-hint">
+              <p><i class="fas fa-info-circle"></i> Demo Credentials:</p>
+              <p>👑 <strong>superadmin@lams.go.tz</strong> | 👔 <strong>admin@lams.go.tz</strong> | 👤 <strong>citizen@lams.go.tz</strong></p>
+              <p>Any password (min 6 characters) works for demo</p>
+            </div>
+          </div>
+
+          <!-- STEP 2: OTP VERIFICATION -->
+          <div class="form-step" id="stepOTP">
+            <div class="form-header">
+              <div class="otp-icon">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <h2>Verify OTP Code</h2>
+              <p>A 6-digit verification code has been sent to your email</p>
+              <p class="otp-email-display" id="otpEmailDisplay">user@email.com</p>
+            </div>
+
+            <form id="otpForm" class="otp-form" novalidate>
+              <!-- OTP Input Fields -->
+              <div class="otp-inputs-container">
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+              </div>
+              <span class="error-message" id="otpError"></span>
+
+              <!-- Timer -->
+              <div class="otp-timer" id="otpTimer">
+                <i class="fas fa-clock"></i>
+                <span id="timerDisplay">01:00</span>
+              </div>
+
+              <!-- Verify Button -->
+              <button type="submit" class="btn btn-primary btn-full" id="verifyOtpBtn">
+                <span class="btn-text">Verify OTP</span>
+                <span class="btn-loader" style="display:none;">
+                  <i class="fas fa-spinner fa-spin"></i> Verifying...
+                </span>
+              </button>
+            </form>
+
+            <!-- Resend & Back -->
+            <div class="otp-actions">
+              <button class="text-btn" id="resendOtpBtn" disabled>
+                <i class="fas fa-redo"></i> Resend Code
+              </button>
+              <button class="text-btn" id="backToLoginBtn">
+                <i class="fas fa-arrow-left"></i> Back to Login
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 3: SUCCESS / REDIRECT -->
+          <div class="form-step" id="stepSuccess">
+            <div class="success-content">
+              <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <h2 id="successMessage">Login Successful!</h2>
+              <p id="redirectMessage">Redirecting to your dashboard...</p>
+              <div class="redirect-loader">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ==================== FEATURES SECTION (BELOW LOGIN) ==================== -->
+  <section class="login-features">
+    <div class="container">
+      <h2 class="features-title">Why Our Authentication System?</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <i class="fas fa-shield-alt"></i>
+          <h3>Secure Authentication</h3>
+          <p>Enterprise-grade encryption protects your credentials and personal information.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-mobile-alt"></i>
+          <h3>OTP Verification</h3>
+          <p>Two-factor authentication adds an extra layer of security to your account.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-database"></i>
+          <h3>Data Protection</h3>
+          <p>All citizen data is stored securely following government data protection standards.</p>
+        </div>
+        <div class="feature-card">
+          <i class="fas fa-user-tag"></i>
+          <h3>Role-Based Access</h3>
+          <p>Access is granted based on your role, ensuring proper authorization levels.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="login-footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <i class="fas fa-landmark"></i>
+          <span>LAMS</span>
+        </div>
+        <p>&copy; <span id="year"></span> Local Administration Management System. All Rights Reserved.</p>
+        <p class="footer-contact">
+          <i class="fas fa-envelope"></i> info@lams.go.tz
+          <span class="separator">|</span>
+          <i class="fas fa-phone"></i> +255 123 456 789
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript File -->
+  <script src="js/login.js"></script>
+</body>
+</html>
