@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'admin':
         successMsg = isEnglish ? 'Admin Access Granted!' : 'Ufikiaji wa Afisa Umekubaliwa!';
         redirectMsg = isEnglish ? 'Redirecting to Admin Dashboard...' : 'Inaelekeza kwenye Dashibodi ya Afisa...';
-        redirectUrl = 'admin-dashboard.html';
+        redirectUrl = 'admin.html';
         break;
       case 'citizen':
         successMsg = isEnglish ? 'Login Successful!' : 'Umeingia kwa Mafanikio!';
@@ -520,6 +520,6 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('🔑 Any password with 6+ characters will work for demo');
   console.log('🔄 Redirect Rules:');
   console.log('   Super Admin → superadmin.html');
-  console.log('   Admin → admin-dashboard.html');
+  console.log('   Admin → admin.html');
   console.log('   Citizen → citizen.html');
 });

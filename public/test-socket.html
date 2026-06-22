@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Socket.IO Test Client</h1>
+    <input type="text" id="token" placeholder="JWT Token" style="width:400px"><br><br>
+    <button onclick="connect()">Connect</button>
+    <button onclick="sendMsg()">Send Message</button>
+    <hr>
+    <div id="output" style="font-family:monospace;"></div>
+
+    <script>
+        let socket;
+
+        function log(msg) {
+            document.getElementById('output').innerHTML += `<p>${msg}</p>`;
+        }
+
+        function connect() {
+            const token = document.getElementById('token').value;
+            socket = io('http://localhost:5000', {
+                auth: { token: token }
+            });
+
+            socket.on('connect', () => log('✅ Connected!'));
+            socket.on('receive_message', (msg) => log('📩 New message: ' + JSON.stringify(msg)));
+            socket.on('message_sent', (msg) => log('✉️ Message sent: ' + JSON.stringify(msg)));
+            socket.on('user_online', (data) => log('🟢 User online: ' + JSON.stringify(data)));
+            socket.on('user_offline', (data) => log('🔴 User offline: ' + JSON.stringify(data)));
+            socket.on('typing_indicator', (data) => log('⌨️ Typing: ' + JSON.stringify(data)));
+            socket.on('error', (err) => log('❌ Error: ' + err.message));
+        }
+
+        function sendMsg() {
+            if (socket) {
+                socket.emit('send_message', { receiver_id: 1, message: 'Hello from test!' });
+            }
+        }
+    </script>
+</body>
+</html>
