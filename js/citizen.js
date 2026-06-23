@@ -204,7 +204,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <div><p>${n.message}</p><small>${n.time}</small></div>
         </div>
       `).join('');
-      // Add click handlers
       list.querySelectorAll('.notif-item').forEach(item => {
         item.addEventListener('click', function() {
           const id = parseInt(this.getAttribute('data-id'));
@@ -244,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     notificationDropdown.classList.remove('active');
   });
 
-  // ==================== LOGOUT (FIXED) ====================
+  // ==================== LOGOUT ====================
   const logoutModalOverlay = document.getElementById('logoutModalOverlay');
   const logoutModal = document.getElementById('logoutModal');
   
@@ -350,7 +349,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <td><button class="btn-sm btn-view view-app-btn" data-id="${app.id}">View</button></td>
       </tr>
     `).join('');
-    // Add event listeners
     tbody.querySelectorAll('.view-app-btn').forEach(btn => {
       btn.addEventListener('click', function() { viewApplication(this.getAttribute('data-id')); });
     });
@@ -379,9 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.classList.add('active');
     modal.classList.add('active');
     
-    // Close button
     document.getElementById('appDetailCloseBtn').addEventListener('click', closeAppDetailModal);
-    // Pay button in detail
     const payBtn = document.getElementById('payFromDetailBtn');
     if (payBtn) payBtn.addEventListener('click', () => { closeAppDetailModal(); openPaymentModal(appId); });
   }
@@ -412,7 +408,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('applicationForm').reset();
   }
 
-  // Open button
   document.getElementById('newApplicationBtn').addEventListener('click', openAppModal);
   document.querySelectorAll('.quick-action-card[data-page="applications"]').forEach(btn => {
     btn.addEventListener('click', function(e) {
@@ -421,33 +416,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Close (X) button - FIXED
   document.getElementById('appModalCloseBtn').addEventListener('click', function(e) {
     e.preventDefault();
     e.stopPropagation();
     closeAppModal();
   });
 
-  // Cancel button - FIXED
   document.getElementById('appModalCancelBtn').addEventListener('click', function(e) {
     e.preventDefault();
     e.stopPropagation();
     closeAppModal();
   });
 
-  // Overlay click - only close if clicking the overlay itself
   appModalOverlay.addEventListener('click', function(e) {
     if (e.target === appModalOverlay) {
       closeAppModal();
     }
   });
 
-  // Prevent modal content clicks from closing
   appModalContent.addEventListener('click', function(e) {
     e.stopPropagation();
   });
 
-  // Form submit
   document.getElementById('applicationForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const docType = document.getElementById('appDocType').value;
@@ -473,7 +463,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSidebarBadges();
   });
 
-  // Application filter
   document.getElementById('appStatusFilter').addEventListener('change', function(e) {
     const filter = e.target.value;
     document.querySelectorAll('#appTableBody tr').forEach(row => {
@@ -501,7 +490,6 @@ document.addEventListener('DOMContentLoaded', () => {
       </tr>
     `).join('');
 
-    // Add event listeners
     tbody.querySelectorAll('.pay-btn').forEach(btn => {
       btn.addEventListener('click', function() { openPaymentModal(this.getAttribute('data-id')); });
     });
@@ -616,7 +604,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSidebarBadges();
   });
 
-  // Payment filter
   document.getElementById('paymentStatusFilter').addEventListener('change', function(e) {
     const filter = e.target.value;
     document.querySelectorAll('#paymentTableBody tr').forEach(row => {
@@ -632,7 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ==================== MESSAGES / CHAT (FIXED) ====================
+  // ==================== MESSAGES / CHAT ====================
   function renderMessages() {
     renderChatHistory();
   }
@@ -646,7 +633,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <small>${msg.time}</small>
       </div>
     `).join('');
-    // Auto-scroll to bottom
     setTimeout(() => { chatBody.scrollTop = chatBody.scrollHeight; }, 50);
   }
 
@@ -787,7 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }));
   }
 
-  // ==================== PROFILE (FIXED) ====================
+  // ==================== PROFILE ====================
   function updateProfileDisplay() {
     document.getElementById('profileAvatarImg').src = profile.photo;
     document.getElementById('profileDisplayName').textContent = profile.name;
@@ -800,7 +786,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('headerUserName').textContent = profile.name.split(' ')[0];
   }
 
-  // Open profile edit
   document.getElementById('openProfileEditBtn').addEventListener('click', openProfileEditModal);
   
   function openProfileEditModal() {
@@ -820,24 +805,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('profileEditModal').classList.remove('active');
   }
 
-  // Close button
   document.getElementById('profileEditCloseBtn').addEventListener('click', function(e) {
     e.preventDefault();
     e.stopPropagation();
     closeProfileEditModal();
   });
 
-  // Overlay click
   document.getElementById('profileEditModalOverlay').addEventListener('click', function(e) {
     if (e.target === this) closeProfileEditModal();
   });
 
-  // Prevent modal content clicks from closing - FIXED
   document.getElementById('profileEditModalContent').addEventListener('click', function(e) {
     e.stopPropagation();
   });
 
-  // Save profile
   document.getElementById('profileEditForm').addEventListener('submit', function(e) {
     e.preventDefault();
     profile.name = document.getElementById('editProfileName').value;
@@ -851,7 +832,6 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast('success', 'Profile updated successfully!');
   });
 
-  // Photo upload
   document.getElementById('profilePhotoUpload').addEventListener('change', function(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -866,7 +846,6 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.readAsDataURL(file);
   });
 
-  // Change Password
   document.getElementById('openPasswordBtn').addEventListener('click', openPasswordModal);
   
   function openPasswordModal() {
