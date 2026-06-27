@@ -39,6 +39,7 @@ body.dark-mode {
 
 html {
   scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
@@ -48,6 +49,7 @@ body {
   line-height: 1.6;
   transition: background 0.3s, color 0.3s;
   overflow-x: hidden;
+  height: 100%;
 }
 
 a {
@@ -310,6 +312,7 @@ body.dark-mode .icon-btn:hover {
 .citizen-container {
   display: flex;
   min-height: 100vh;
+  height: 100%;
 }
 
 .sidebar {
@@ -1075,6 +1078,8 @@ tr:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
 .balance-amount {

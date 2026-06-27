@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="css/citizen.css">
 </head>
 <body>
@@ -48,6 +49,45 @@
           <div class="form-group"><label>Phone Number</label><input type="text" placeholder="e.g. 255 7XX XXX XXX"></div>
         </div>
         <button class="btn btn-primary btn-full" id="processPaymentBtn"><i class="fas fa-lock"></i> Pay Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outstanding Balance Payment Modal -->
+  <div class="modal-overlay" id="outstandingPaymentModalOverlay">
+    <div class="modal" id="outstandingPaymentModal">
+      <div class="modal-content" id="outstandingPaymentModalContent">
+        <button class="modal-close modal-close-btn" id="outstandingPaymentCloseBtn">&times;</button>
+        <h2><i class="fas fa-money-check-alt"></i> Pay Outstanding Balance</h2>
+        <div id="outstandingPaymentDetails"></div>
+        <form id="outstandingPaymentForm">
+          <div class="form-group">
+            <label>Payment Type *</label>
+            <select id="outstandingPaymentType" required>
+              <option value="">Select payment type</option>
+              <option value="mobile">Mobile Money (M-Pesa/Tigo Pesa/Airtel Money)</option>
+              <option value="bank">Bank Transfer (CRDB/NMB/NBC)</option>
+              <option value="card">Credit/Debit Card</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Control Number / Payment Reference *</label>
+            <input type="text" id="controlNumber" placeholder="e.g. 9914XXXXXXXXXX" required>
+          </div>
+          <div class="form-group">
+            <label>Transaction PIN *</label>
+            <input type="password" id="transactionPIN" placeholder="Enter your PIN" maxlength="6" required>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="termsAgree" required> 
+              I confirm that the payment details are correct and agree to proceed
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">
+            <i class="fas fa-check-circle"></i> Confirm & Pay TZS <span id="outstandingPayAmount">0</span>
+          </button>
+        </form>
       </div>
     </div>
   </div>
@@ -100,21 +140,22 @@
     </div>
   </div>
 
-  <!-- New Application Modal - FIXED -->
-  <div class="modal-overlay" id="appModalOverlay"></div>
-  <div class="modal" id="appModal">
-    <div class="modal-content" id="appModalContent">
-      <button class="modal-close modal-close-btn" id="appModalCloseBtn">&times;</button>
-      <h2>New Document Application</h2>
-      <form id="applicationForm">
-        <div class="form-group"><label>Document Type *</label><select id="appDocType" required><option value="">Select document type</option><option value="Residence Confirmation Letter">Residence Confirmation Letter</option><option value="Identity Confirmation Letter">Identity Confirmation Letter</option><option value="Business Permit Support Letter">Business Permit Support Letter</option><option value="Recommendation Letter">Recommendation Letter</option><option value="Custom Request">Custom Request</option></select></div>
-        <div class="form-group"><label>Reason for Application</label><textarea id="appReason" rows="3" placeholder="Briefly describe why you need this document..."></textarea></div>
-        <div class="form-group"><label>Additional Notes</label><textarea id="appNotes" rows="2" placeholder="Any additional information..."></textarea></div>
-        <div style="display:flex;gap:10px;">
-          <button type="button" class="btn btn-outline" id="appModalCancelBtn" style="flex:1;">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="flex:2;">Submit Application</button>
-        </div>
-      </form>
+  <!-- New Application Modal -->
+  <div class="modal-overlay" id="appModalOverlay">
+    <div class="modal" id="appModal">
+      <div class="modal-content" id="appModalContent">
+        <button class="modal-close modal-close-btn" id="appModalCloseBtn">&times;</button>
+        <h2>New Document Application</h2>
+        <form id="applicationForm">
+          <div class="form-group"><label>Document Type *</label><select id="appDocType" required><option value="">Select document type</option><option value="Residence Confirmation Letter">Residence Confirmation Letter</option><option value="Identity Confirmation Letter">Identity Confirmation Letter</option><option value="Business Permit Support Letter">Business Permit Support Letter</option><option value="Recommendation Letter">Recommendation Letter</option><option value="Custom Request">Custom Request</option></select></div>
+          <div class="form-group"><label>Reason for Application</label><textarea id="appReason" rows="3" placeholder="Briefly describe why you need this document..."></textarea></div>
+          <div class="form-group"><label>Additional Notes</label><textarea id="appNotes" rows="2" placeholder="Any additional information..."></textarea></div>
+          <div style="display:flex;gap:10px;">
+            <button type="button" class="btn btn-outline" id="appModalCancelBtn" style="flex:1;">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="flex:2;">Submit Application</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -224,7 +265,14 @@
         <section class="page-content" id="page-payments">
           <h1 class="page-title">My Payments</h1>
           <div class="balance-alert-card" id="outstandingBalanceCard" style="display:none;">
-            <div><h3><i class="fas fa-exclamation-circle"></i> Outstanding Balance</h3><p class="balance-amount" id="outstandingAmount">TZS 0</p><p class="balance-note">You have unpaid payment records</p></div>
+            <div>
+              <h3><i class="fas fa-exclamation-circle"></i> Outstanding Balance</h3>
+              <p class="balance-amount" id="outstandingAmount">TZS 0</p>
+              <p class="balance-note">You have unpaid payment records</p>
+            </div>
+            <button class="btn btn-primary" id="payOutstandingBtn">
+              <i class="fas fa-credit-card"></i> Pay Now
+            </button>
           </div>
           <div class="filter-row">
             <select id="paymentStatusFilter"><option value="all">All Payments</option><option value="Paid">Paid</option><option value="Unpaid">Unpaid</option></select>
@@ -236,7 +284,6 @@
           <div class="table-container"><table><thead><tr><th>Payment ID</th><th>Document</th><th>Amount</th><th>Payment Date</th><th>Method</th><th>Status</th></tr></thead><tbody id="paymentHistoryBody"></tbody></table></div>
         </section>
 
-        <!-- Messages Page - FIXED CHAT -->
         <section class="page-content" id="page-messages">
           <h1 class="page-title">Messages</h1>
           <div class="chat-layout">

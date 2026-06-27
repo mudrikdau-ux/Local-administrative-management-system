@@ -1,4 +1,4 @@
-// citizen.js - Complete Fixed Version
+// citizen.js - Professional Fixed Version with PDF Receipt & Payment System
 document.addEventListener('DOMContentLoaded', () => {
   // ==================== DATA STORE ====================
   function getStore(key, defaultValue) {
@@ -15,10 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
   ]);
 
   let payments = getStore('citizen_payments', [
-    { id: 'PAY-001', appId: 'APP-001', docType: 'Residence Confirmation Letter', description: 'Document Processing Fee', amount: 15000, date: '2026-06-10', status: 'Paid', method: 'Mobile Money' },
-    { id: 'PAY-002', appId: 'APP-004', docType: 'Recommendation Letter', description: 'Document Processing Fee', amount: 10000, date: '2026-05-20', status: 'Paid', method: 'Bank Transfer' },
-    { id: 'PAY-003', appId: 'APP-002', docType: 'Identity Confirmation Letter', description: 'Certificate Issuance Fee', amount: 25000, date: '2026-06-15', status: 'Unpaid', method: '' },
-    { id: 'PAY-004', appId: 'APP-003', docType: 'Business Permit Support Letter', description: 'Business Permit Fee', amount: 30000, date: '2026-06-18', status: 'Unpaid', method: '' },
+    { id: 'PAY-001', appId: 'APP-001', docType: 'Residence Confirmation Letter', description: 'Document Processing Fee', amount: 15000, date: '2026-06-10', status: 'Paid', method: 'Mobile Money', transactionId: 'TXN-001', controlNumber: '991412345678' },
+    { id: 'PAY-002', appId: 'APP-004', docType: 'Recommendation Letter', description: 'Document Processing Fee', amount: 10000, date: '2026-05-20', status: 'Paid', method: 'Bank Transfer', transactionId: 'TXN-002', controlNumber: '991487654321' },
+    { id: 'PAY-003', appId: 'APP-002', docType: 'Identity Confirmation Letter', description: 'Certificate Issuance Fee', amount: 25000, date: '2026-06-15', status: 'Unpaid', method: '', transactionId: '', controlNumber: '' },
+    { id: 'PAY-004', appId: 'APP-003', docType: 'Business Permit Support Letter', description: 'Business Permit Fee', amount: 30000, date: '2026-06-18', status: 'Unpaid', method: '', transactionId: '', controlNumber: '' },
   ]);
 
   let documents = getStore('citizen_documents', [
@@ -61,6 +61,117 @@ document.addEventListener('DOMContentLoaded', () => {
     setStore('citizen_notifications', notifications);
     setStore('citizen_chat_admin', chatHistory);
     setStore('citizen_chat_support', supportChatHistory);
+  }
+
+  // ==================== PDF RECEIPT GENERATOR ====================
+  function generatePDFReceipt(payment) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Header
+    doc.setFillColor(0, 102, 204);
+    doc.rect(0, 0, pageWidth, 35, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('LAMS - Local Administration', pageWidth / 2, 18, { align: 'center' });
+    doc.text('Management System', pageWidth / 2, 28, { align: 'center' });
+    
+    // Receipt Title
+    doc.setTextColor(0, 102, 204);
+    doc.setFontSize(16);
+    doc.text('OFFICIAL PAYMENT RECEIPT', pageWidth / 2, 45, { align: 'center' });
+    
+    // Horizontal Line
+    doc.setDrawColor(0, 102, 204);
+    doc.setLineWidth(0.5);
+    doc.line(15, 50, pageWidth - 15, 50);
+    
+    // Receipt Details
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(10);
+    
+    const leftX = 15;
+    const rightX = pageWidth / 2 + 5;
+    let yPos = 60;
+    const lineHeight = 8;
+    
+    const addRow = (label, value, x, y) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(label + ':', x, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(value || 'N/A', x + 45, y);
+    };
+    
+    addRow('Receipt No', payment.id, leftX, yPos);
+    addRow('Transaction ID', payment.transactionId || 'N/A', rightX, yPos);
+    yPos += lineHeight;
+    
+    addRow('Date', payment.date, leftX, yPos);
+    addRow('Time', new Date().toLocaleTimeString(), rightX, yPos);
+    yPos += lineHeight + 4;
+    
+    // Applicant Details Section
+    doc.setFillColor(240, 248, 255);
+    doc.rect(15, yPos, pageWidth - 30, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('APPLICANT DETAILS', leftX, yPos + 5.5);
+    yPos += 12;
+    
+    doc.setFontSize(10);
+    addRow('Full Name', profile.name, leftX, yPos);
+    addRow('National ID', profile.nationalId, rightX, yPos);
+    yPos += lineHeight;
+    
+    addRow('Email', profile.email, leftX, yPos);
+    addRow('Phone', profile.phone, rightX, yPos);
+    yPos += lineHeight;
+    
+    addRow('Address', profile.address, leftX, yPos);
+    yPos += lineHeight + 4;
+    
+    // Payment Details Section
+    doc.setFillColor(240, 248, 255);
+    doc.rect(15, yPos, pageWidth - 30, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('PAYMENT DETAILS', leftX, yPos + 5.5);
+    yPos += 12;
+    
+    doc.setFontSize(10);
+    addRow('Service', payment.docType, leftX, yPos);
+    addRow('Description', payment.description, rightX, yPos);
+    yPos += lineHeight;
+    
+    addRow('Payment Method', payment.method, leftX, yPos);
+    addRow('Control Number', payment.controlNumber || 'N/A', rightX, yPos);
+    yPos += lineHeight;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(0, 102, 204);
+    doc.text('Amount Paid: TZS ' + payment.amount.toLocaleString(), pageWidth / 2, yPos + 10, { align: 'center' });
+    yPos += 20;
+    
+    // Status
+    doc.setTextColor(0, 184, 148);
+    doc.setFontSize(12);
+    doc.text('STATUS: PAID', pageWidth / 2, yPos, { align: 'center' });
+    
+    // Footer
+    doc.setDrawColor(0, 102, 204);
+    doc.line(15, yPos + 10, pageWidth - 15, yPos + 10);
+    
+    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(8);
+    doc.text('This is an official receipt from the Local Administration Management System (LAMS).', pageWidth / 2, yPos + 18, { align: 'center' });
+    doc.text('For any inquiries, please contact your local administrator.', pageWidth / 2, yPos + 24, { align: 'center' });
+    doc.text('Generated on: ' + new Date().toLocaleString(), pageWidth / 2, yPos + 30, { align: 'center' });
+    
+    // Save PDF
+    doc.save(`LAMS_Receipt_${payment.id}.pdf`);
   }
 
   // ==================== DOM REFERENCES ====================
@@ -451,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const amounts = { 'Residence Confirmation Letter': 15000, 'Identity Confirmation Letter': 25000, 'Business Permit Support Letter': 30000, 'Recommendation Letter': 10000, 'Custom Request': 20000 };
     const payId = 'PAY-' + String(payments.length + 1).padStart(3, '0');
-    payments.push({ id: payId, appId, docType, description: 'Document Processing Fee', amount: amounts[docType] || 20000, date: today, status: 'Unpaid', method: '' });
+    payments.push({ id: payId, appId, docType, description: 'Document Processing Fee', amount: amounts[docType] || 20000, date: today, status: 'Unpaid', method: '', transactionId: '', controlNumber: '' });
 
     saveAllData();
     addNotification('New application submitted: ' + docType, 'fa-file-alt', '#f59e0b');
@@ -486,12 +597,23 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>#${p.id}</td><td>${p.docType}</td><td>${p.description}</td>
         <td>TZS ${p.amount.toLocaleString()}</td><td>${p.date}</td>
         <td><span class="status-badge ${p.status === 'Paid' ? 'status-paid' : 'status-unpaid'}">${p.status}</span></td>
-        <td>${p.status === 'Unpaid' ? `<button class="btn-sm btn-primary pay-btn" data-id="${p.appId}">Pay Now</button>` : `<button class="btn-sm btn-download doc-btn" data-id="${p.id}"><i class="fas fa-download"></i> Document</button>`}</td>
+        <td>${p.status === 'Unpaid' ? `<button class="btn-sm btn-primary pay-btn" data-id="${p.appId}">Pay Now</button>` : `<button class="btn-sm btn-download receipt-btn" data-id="${p.id}"><i class="fas fa-download"></i> Receipt</button>`}</td>
       </tr>
     `).join('');
 
     tbody.querySelectorAll('.pay-btn').forEach(btn => {
       btn.addEventListener('click', function() { openPaymentModal(this.getAttribute('data-id')); });
+    });
+    
+    tbody.querySelectorAll('.receipt-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const paymentId = this.getAttribute('data-id');
+        const payment = payments.find(p => p.id === paymentId);
+        if (payment) {
+          generatePDFReceipt(payment);
+          showToast('success', 'Receipt downloaded successfully!');
+        }
+      });
     });
 
     const historyBody = document.getElementById('paymentHistoryBody');
@@ -513,13 +635,107 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     } else { pagDiv.innerHTML = ''; }
 
+    updateOutstandingBalance();
+  }
+
+  function updateOutstandingBalance() {
     const unpaidTotal = payments.filter(p => p.status === 'Unpaid').reduce((sum, p) => sum + p.amount, 0);
     const balanceCard = document.getElementById('outstandingBalanceCard');
     if (unpaidTotal > 0) {
       balanceCard.style.display = 'flex';
       document.getElementById('outstandingAmount').textContent = 'TZS ' + unpaidTotal.toLocaleString();
-    } else { balanceCard.style.display = 'none'; }
+    } else { 
+      balanceCard.style.display = 'none'; 
+    }
   }
+
+  // ==================== OUTSTANDING BALANCE PAYMENT ====================
+  document.getElementById('payOutstandingBtn').addEventListener('click', openOutstandingPaymentModal);
+
+  function openOutstandingPaymentModal() {
+    const unpaidTotal = payments.filter(p => p.status === 'Unpaid').reduce((sum, p) => sum + p.amount, 0);
+    document.getElementById('outstandingPayAmount').textContent = unpaidTotal.toLocaleString();
+    
+    document.getElementById('outstandingPaymentDetails').innerHTML = `
+      <div style="background:var(--bg);padding:15px;border-radius:10px;margin-bottom:15px;">
+        <p><strong>Total Outstanding Balance:</strong></p>
+        <p style="font-size:1.5rem;font-weight:700;color:var(--primary);">TZS ${unpaidTotal.toLocaleString()}</p>
+        <p style="font-size:0.85rem;color:var(--text-light);">Pay all outstanding payments at once</p>
+      </div>
+    `;
+    
+    const overlay = document.getElementById('outstandingPaymentModalOverlay');
+    const modal = document.getElementById('outstandingPaymentModal');
+    overlay.classList.add('active');
+    modal.classList.add('active');
+  }
+
+  function closeOutstandingPaymentModal() {
+    document.getElementById('outstandingPaymentModalOverlay').classList.remove('active');
+    document.getElementById('outstandingPaymentModal').classList.remove('active');
+    document.getElementById('outstandingPaymentForm').reset();
+  }
+
+  document.getElementById('outstandingPaymentCloseBtn').addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    closeOutstandingPaymentModal();
+  });
+
+  document.getElementById('outstandingPaymentModalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeOutstandingPaymentModal();
+  });
+
+  document.getElementById('outstandingPaymentModalContent').addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+
+  document.getElementById('outstandingPaymentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const paymentType = document.getElementById('outstandingPaymentType').value;
+    const controlNumber = document.getElementById('controlNumber').value;
+    const pin = document.getElementById('transactionPIN').value;
+    
+    if (!paymentType) { showToast('error', 'Please select a payment type'); return; }
+    if (!controlNumber) { showToast('error', 'Please enter control number'); return; }
+    if (!pin || pin.length < 4) { showToast('error', 'Please enter a valid PIN'); return; }
+    
+    const methodNames = { mobile: 'Mobile Money', bank: 'Bank Transfer', card: 'Credit/Debit Card' };
+    
+    // Process all unpaid payments
+    payments.filter(p => p.status === 'Unpaid').forEach(payment => {
+      payment.status = 'Paid';
+      payment.method = methodNames[paymentType];
+      payment.transactionId = 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+      payment.controlNumber = controlNumber;
+      
+      const app = applications.find(a => a.id === payment.appId);
+      if (app) {
+        app.status = 'Approved';
+        if (!documents.find(d => d.appId === payment.appId)) {
+          documents.push({
+            id: 'DOC-' + String(documents.length + 1).padStart(3, '0'),
+            appId: payment.appId,
+            name: app.docType,
+            type: 'Official Letter',
+            issueDate: new Date().toISOString().split('T')[0],
+            status: 'Ready'
+          });
+        }
+      }
+    });
+
+    saveAllData();
+    addNotification('Outstanding balance of TZS ' + payments.filter(p => p.status === 'Paid').slice(-payments.filter(p => p.status === 'Unpaid').length).reduce((sum, p) => sum + p.amount, 0).toLocaleString() + ' paid successfully', 'fa-check-circle', '#00b894');
+    showToast('success', 'Payment successful! All documents are now available.');
+    
+    closeOutstandingPaymentModal();
+    updateDashboard();
+    renderPayments(currentPaymentPage);
+    renderDocuments();
+    updateSidebarBadges();
+  });
 
   function openPaymentModal(appId) {
     currentPaymentId = appId;
@@ -578,6 +794,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     payment.status = 'Paid';
     payment.method = methodNames[method];
+    payment.transactionId = 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    payment.controlNumber = '9914' + Math.random().toString().substr(2, 8);
     
     const app = applications.find(a => a.id === currentPaymentId);
     if (app) {
@@ -923,9 +1141,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   init();
 
-  console.log('👤 LAMS Citizen Portal - Fixed & Upgraded');
-  console.log('✅ Modal close buttons working');
-  console.log('✅ Chat interface responsive & scrollable');
-  console.log('✅ Profile edit form stays open');
-  console.log('✅ All event listeners properly isolated');
+  console.log('👤 LAMS Citizen Portal - Professional Version');
+  console.log('✅ PDF Receipt generation with jsPDF');
+  console.log('✅ Outstanding balance payment system');
+  console.log('✅ New application modal fixed');
+  console.log('✅ All professional features implemented');
 });
