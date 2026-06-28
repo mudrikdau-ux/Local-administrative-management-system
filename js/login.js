@@ -1,5 +1,6 @@
-// login.js
+// login.js - LAMS Login with Role-Based Forgot Password Logic
 document.addEventListener('DOMContentLoaded', () => {
+
   // ==================== DOM REFERENCES ====================
   const body = document.body;
   const themeToggle = document.getElementById('themeToggle');
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginBtn = document.getElementById('loginBtn');
   const emailError = document.getElementById('emailError');
   const passwordError = document.getElementById('passwordError');
+  const forgotPasswordLink = document.getElementById('forgotPasswordLink');
   
   // Role tabs
   const roleTabs = document.querySelectorAll('.role-tab');
@@ -40,6 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Toast
   const toastContainer = document.getElementById('toastContainer');
+  
+  // Forgot Password Modal
+  const forgotPasswordModalOverlay = document.getElementById('forgotPasswordModalOverlay');
+  const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+  const forgotPasswordModalContent = document.getElementById('forgotPasswordModalContent');
   
   // Year
   document.getElementById('year').textContent = new Date().getFullYear();
@@ -69,11 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
   function updateUILanguage() {
     if (isEnglish) {
-      // English UI
       document.querySelector('.form-header h2').textContent = 'Welcome Back';
       document.querySelector('.form-header p').textContent = 'Sign in to access your account';
       
-      // Update role tabs
       const superAdminTab = document.querySelector('.role-tab[data-role="superadmin"]');
       const adminTab = document.querySelector('.role-tab[data-role="admin"]');
       const citizenTab = document.querySelector('.role-tab[data-role="citizen"]');
@@ -85,13 +90,12 @@ document.addEventListener('DOMContentLoaded', () => {
       loginEmail.placeholder = 'Enter your email address';
       loginPassword.placeholder = 'Enter your password';
       loginBtn.querySelector('.btn-text').textContent = 'Sign In';
-      document.querySelector('.forgot-password').textContent = 'Forgot Password?';
+      forgotPasswordLink.textContent = 'Forgot Password?';
       document.querySelector('.remember-me span').textContent = 'Remember me';
       document.querySelector('.visual-content h1').textContent = 'Local Administration Management System';
       document.querySelector('.visual-subtitle').textContent = 'Secure digital platform for efficient local government services and community management.';
       document.querySelector('.features-title').textContent = 'Why Our Authentication System?';
       
-      // Demo hint
       const demoHint = document.querySelector('.demo-hint');
       if (demoHint) {
         demoHint.innerHTML = `
@@ -101,27 +105,19 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       }
       
-      // OTP step
       const otpHeader = document.querySelector('#stepOTP .form-header h2');
       const otpSubtext = document.querySelector('#stepOTP .form-header p');
       if (otpHeader) otpHeader.textContent = 'Verify OTP Code';
       if (otpSubtext) otpSubtext.textContent = 'A 6-digit verification code has been sent to your email';
-      
       const verifyBtnText = verifyOtpBtn.querySelector('.btn-text');
       if (verifyBtnText) verifyBtnText.textContent = 'Verify OTP';
-      
-      const resendBtn = document.getElementById('resendOtpBtn');
-      if (resendBtn) resendBtn.innerHTML = '<i class="fas fa-redo"></i> Resend Code';
-      
-      const backBtn = document.getElementById('backToLoginBtn');
-      if (backBtn) backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to Login';
+      if (resendOtpBtn) resendOtpBtn.innerHTML = '<i class="fas fa-redo"></i> Resend Code';
+      if (backToLoginBtn) backToLoginBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Back to Login';
       
     } else {
-      // Swahili UI
       document.querySelector('.form-header h2').textContent = 'Karibu Tena';
       document.querySelector('.form-header p').textContent = 'Ingia kufikia akaunti yako';
       
-      // Update role tabs
       const superAdminTab = document.querySelector('.role-tab[data-role="superadmin"]');
       const adminTab = document.querySelector('.role-tab[data-role="admin"]');
       const citizenTab = document.querySelector('.role-tab[data-role="citizen"]');
@@ -133,13 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
       loginEmail.placeholder = 'Weka anwani yako ya barua pepe';
       loginPassword.placeholder = 'Weka nenosiri lako';
       loginBtn.querySelector('.btn-text').textContent = 'Ingia';
-      document.querySelector('.forgot-password').textContent = 'Umesahau Nenosiri?';
+      forgotPasswordLink.textContent = 'Umesahau Nenosiri?';
       document.querySelector('.remember-me span').textContent = 'Nikumbuke';
       document.querySelector('.visual-content h1').textContent = 'Mfumo wa Usimamizi wa Utawala wa Mitaa';
       document.querySelector('.visual-subtitle').textContent = 'Jukwaa salama la kidijitali kwa huduma bora za serikali za mitaa na usimamizi wa jamii.';
       document.querySelector('.features-title').textContent = 'Kwa Nini Mfumo Wetu wa Uthibitishaji?';
       
-      // Demo hint
       const demoHint = document.querySelector('.demo-hint');
       if (demoHint) {
         demoHint.innerHTML = `
@@ -149,20 +144,14 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       }
       
-      // OTP step
       const otpHeader = document.querySelector('#stepOTP .form-header h2');
       const otpSubtext = document.querySelector('#stepOTP .form-header p');
       if (otpHeader) otpHeader.textContent = 'Thibitisha Nambari ya OTP';
       if (otpSubtext) otpSubtext.textContent = 'Nambari ya uthibitishaji ya tarakimu 6 imetumwa kwa barua pepe yako';
-      
       const verifyBtnText = verifyOtpBtn.querySelector('.btn-text');
       if (verifyBtnText) verifyBtnText.textContent = 'Thibitisha OTP';
-      
-      const resendBtn = document.getElementById('resendOtpBtn');
-      if (resendBtn) resendBtn.innerHTML = '<i class="fas fa-redo"></i> Tuma Tena';
-      
-      const backBtn = document.getElementById('backToLoginBtn');
-      if (backBtn) backBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Rudi Kwenye Ingia';
+      if (resendOtpBtn) resendOtpBtn.innerHTML = '<i class="fas fa-redo"></i> Tuma Tena';
+      if (backToLoginBtn) backToLoginBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Rudi Kwenye Ingia';
     }
   }
 
@@ -195,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
       tab.classList.add('active');
       selectedRole = tab.getAttribute('data-role');
       
-      // Update placeholder hints based on role
       switch(selectedRole) {
         case 'superadmin':
           loginEmail.placeholder = isEnglish ? 'superadmin@lams.go.tz' : 'superadmin@lams.go.tz';
@@ -207,10 +195,93 @@ document.addEventListener('DOMContentLoaded', () => {
           loginEmail.placeholder = isEnglish ? 'citizen@lams.go.tz' : 'citizen@lams.go.tz';
           break;
       }
-      
-      // Focus on email field
       loginEmail.focus();
     });
+  });
+
+  // ==================== ROLE-BASED FORGOT PASSWORD ====================
+  forgotPasswordLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    openForgotPasswordModal();
+  });
+
+  function openForgotPasswordModal() {
+    let iconClass = '';
+    let title = '';
+    let message = '';
+    let buttonsHTML = '';
+
+    switch(selectedRole) {
+      case 'citizen':
+        // Citizen: redirect to dedicated forgot password page
+        window.location.href = 'forgot-password.html';
+        return; // Exit early, no modal needed
+
+      case 'admin':
+        iconClass = 'fa-exclamation-triangle warning';
+        title = isEnglish ? 'Admin Password Reset' : 'Uwekaji Upya wa Nenosiri la Afisa';
+        message = isEnglish 
+          ? 'Password reset for Admin accounts is managed by the Super Administrator. Please contact your Super Admin for assistance.'
+          : 'Uwekaji upya wa nenosiri kwa akaunti za Afisa unasimamiwa na Msimamizi Mkuu. Tafadhali wasiliana na Msimamizi Mkuu wako kwa msaada.';
+        buttonsHTML = `
+          <button class="btn btn-outline" onclick="closeForgotPasswordModal()">
+            <i class="fas fa-times"></i> ${isEnglish ? 'Cancel' : 'Ghairi'}
+          </button>
+          <button class="btn btn-warning" onclick="closeForgotPasswordModal()">
+            <i class="fas fa-headset"></i> ${isEnglish ? 'Contact Super Admin' : 'Wasiliana na Msimamizi Mkuu'}
+          </button>
+        `;
+        break;
+
+      case 'superadmin':
+        iconClass = 'fa-shield-alt danger';
+        title = isEnglish ? 'Super Admin Password' : 'Nenosiri la Msimamizi Mkuu';
+        message = isEnglish
+          ? 'Super Admin accounts are managed directly at the database level. Please contact the Database Administrator (System Controller) for password assistance.'
+          : 'Akaunti za Msimamizi Mkuu zinasimamiwa moja kwa moja kwenye kiwango cha hifadhidata. Tafadhali wasiliana na Msimamizi wa Hifadhidata (Mdhibiti wa Mfumo) kwa msaada wa nenosiri.';
+        buttonsHTML = `
+          <button class="btn btn-primary" onclick="closeForgotPasswordModal()">
+            <i class="fas fa-check"></i> ${isEnglish ? 'OK' : 'Sawa'}
+          </button>
+        `;
+        break;
+    }
+
+    forgotPasswordModalContent.innerHTML = `
+      <div class="modal-icon ${iconClass.includes('warning') ? 'warning' : 'danger'}">
+        <i class="fas ${iconClass}"></i>
+      </div>
+      <h2>${title}</h2>
+      <p>${message}</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px;">
+        ${buttonsHTML}
+      </div>
+    `;
+
+    forgotPasswordModalOverlay.classList.add('active');
+  }
+
+  window.closeForgotPasswordModal = function() {
+    forgotPasswordModalOverlay.classList.remove('active');
+  };
+
+  // Close modal when clicking overlay
+  forgotPasswordModalOverlay.addEventListener('click', function(e) {
+    if (e.target === forgotPasswordModalOverlay) {
+      closeForgotPasswordModal();
+    }
+  });
+
+  // Prevent modal close when clicking inside modal
+  forgotPasswordModal.addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+
+  // Close modal with Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && forgotPasswordModalOverlay.classList.contains('active')) {
+      closeForgotPasswordModal();
+    }
   });
 
   // ==================== PASSWORD TOGGLE ====================
@@ -224,7 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
-    // Reset errors
     emailError.textContent = '';
     passwordError.textContent = '';
     
@@ -232,7 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const password = loginPassword.value.trim();
     let isValid = true;
 
-    // Email validation
     if (!email) {
       emailError.textContent = isEnglish ? 'Email address is required' : 'Anwani ya barua pepe inahitajika';
       isValid = false;
@@ -241,7 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
       isValid = false;
     }
 
-    // Password validation
     if (!password) {
       passwordError.textContent = isEnglish ? 'Password is required' : 'Nenosiri linahitajika';
       isValid = false;
@@ -252,18 +320,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!isValid) return;
 
-    // Show loading state
     loginBtn.disabled = true;
     loginBtn.querySelector('.btn-text').style.display = 'none';
     loginBtn.querySelector('.btn-loader').style.display = 'flex';
 
-    // Simulate authentication delay
     setTimeout(() => {
       loginBtn.disabled = false;
       loginBtn.querySelector('.btn-text').style.display = '';
       loginBtn.querySelector('.btn-loader').style.display = 'none';
 
-      // Check role-email match (simulated validation)
       const emailLower = email.toLowerCase();
       let validEmail = false;
       let errorMessage = '';
@@ -294,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Authentication successful - proceed to OTP
       showToast('success', isEnglish ? 'Credentials verified! Please enter OTP.' : 'Vitambulisho vimethibitishwa! Tafadhali weka OTP.');
       switchToOTPStep(email);
     }, 1500);
@@ -306,19 +370,14 @@ document.addEventListener('DOMContentLoaded', () => {
     stepOTP.classList.add('active');
     otpEmailDisplay.textContent = email;
     
-    // Generate random OTP
     generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
     console.log('🔑 Generated OTP (simulation):', generatedOTP);
-    
-    // Show OTP in toast for demo purposes
     showToast('info', `Demo OTP: ${generatedOTP}`);
     
-    // Reset OTP inputs
     otpInputs.forEach(input => input.value = '');
     otpInputs[0].focus();
     otpError.textContent = '';
     
-    // Start timer
     startOTPTimer();
   }
 
@@ -326,32 +385,18 @@ document.addEventListener('DOMContentLoaded', () => {
   otpInputs.forEach((input, index) => {
     input.addEventListener('input', (e) => {
       const value = e.target.value;
-      // Only allow digits
-      if (!/^\d$/.test(value)) {
-        input.value = '';
-        return;
-      }
-      // Auto-focus next input
-      if (value && index < otpInputs.length - 1) {
-        otpInputs[index + 1].focus();
-      }
+      if (!/^\d$/.test(value)) { input.value = ''; return; }
+      if (value && index < otpInputs.length - 1) { otpInputs[index + 1].focus(); }
     });
-
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && !input.value && index > 0) {
-        otpInputs[index - 1].focus();
-      }
+      if (e.key === 'Backspace' && !input.value && index > 0) { otpInputs[index - 1].focus(); }
     });
-
-    // Handle paste event
     input.addEventListener('paste', (e) => {
       e.preventDefault();
       const pastedData = e.clipboardData.getData('text').trim();
       if (/^\d{6}$/.test(pastedData)) {
         const digits = pastedData.split('');
-        otpInputs.forEach((inp, i) => {
-          inp.value = digits[i] || '';
-        });
+        otpInputs.forEach((inp, i) => { inp.value = digits[i] || ''; });
         otpInputs[otpInputs.length - 1].focus();
       }
     });
@@ -368,7 +413,6 @@ document.addEventListener('DOMContentLoaded', () => {
     timerInterval = setInterval(() => {
       timerSeconds--;
       updateTimerDisplay();
-      
       if (timerSeconds <= 0) {
         clearInterval(timerInterval);
         otpTimer.classList.add('expired');
@@ -387,15 +431,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==================== RESEND OTP ====================
   resendOtpBtn.addEventListener('click', () => {
     if (timerSeconds > 0) return;
-    
     generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
     console.log('🔑 New OTP generated:', generatedOTP);
     showToast('info', `New OTP sent! Demo: ${generatedOTP}`);
-    
     otpInputs.forEach(input => input.value = '');
     otpInputs[0].focus();
     otpError.textContent = '';
-    
     startOTPTimer();
   });
 
@@ -412,14 +453,12 @@ document.addEventListener('DOMContentLoaded', () => {
   otpForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
-    // Check if timer expired
     if (timerSeconds <= 0) {
       otpError.textContent = isEnglish ? 'OTP has expired. Please request a new one.' : 'OTP imekwisha muda. Tafadhali ombi mpya.';
       showToast('error', isEnglish ? 'OTP expired!' : 'OTP imekwisha!');
       return;
     }
 
-    // Collect OTP digits
     const enteredOTP = Array.from(otpInputs).map(input => input.value).join('');
     
     if (enteredOTP.length !== 6) {
@@ -427,25 +466,21 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Show loading
     verifyOtpBtn.disabled = true;
     verifyOtpBtn.querySelector('.btn-text').style.display = 'none';
     verifyOtpBtn.querySelector('.btn-loader').style.display = 'flex';
 
-    // Simulate verification delay
     setTimeout(() => {
       verifyOtpBtn.disabled = false;
       verifyOtpBtn.querySelector('.btn-text').style.display = '';
       verifyOtpBtn.querySelector('.btn-loader').style.display = 'none';
 
       if (enteredOTP === generatedOTP) {
-        // OTP correct
         otpError.textContent = '';
         clearInterval(timerInterval);
         showToast('success', isEnglish ? 'OTP verified successfully!' : 'OTP imethibitishwa!');
         switchToSuccessStep();
       } else {
-        // OTP incorrect
         otpError.textContent = isEnglish ? 'Incorrect OTP. Please try again.' : 'OTP si sahihi. Tafadhali jaribu tena.';
         showToast('error', isEnglish ? 'Invalid OTP code!' : 'Nambari ya OTP si sahihi!');
         otpInputs.forEach(input => input.value = '');
@@ -459,7 +494,6 @@ document.addEventListener('DOMContentLoaded', () => {
     stepOTP.classList.remove('active');
     stepSuccess.classList.add('active');
 
-    // Set success messages based on role
     let successMsg = '';
     let redirectMsg = '';
     let redirectUrl = '';
@@ -485,7 +519,6 @@ document.addEventListener('DOMContentLoaded', () => {
     successMessage.textContent = successMsg;
     redirectMessage.textContent = redirectMsg;
     
-    // Store user session info
     const userSession = {
       role: selectedRole,
       email: otpEmailDisplay.textContent,
@@ -500,7 +533,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==================== INITIALIZATION ====================
-  // Set default active tab to citizen
   const defaultActiveTab = document.querySelector('.role-tab[data-role="citizen"]');
   if (defaultActiveTab) {
     roleTabs.forEach(t => t.classList.remove('active'));
@@ -509,17 +541,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loginEmail.placeholder = 'citizen@lams.go.tz';
   }
   
-  // Focus email field on load
   setTimeout(() => loginEmail.focus(), 500);
 
-  console.log('🔐 LAMS Login System - Initialized Successfully');
-  console.log('✅ Dark mode ready | 🌐 Language toggle ready | 📱 OTP system active');
+  console.log('🔐 LAMS Login System - Role-Based Forgot Password Active');
+  console.log('✅ Citizens → forgot-password.html');
+  console.log('✅ Admins → Contact Super Admin modal');
+  console.log('✅ Super Admins → Contact DB Administrator modal');
   console.log('👑 Super Admin: superadmin@lams.go.tz');
   console.log('👔 Admin: admin@lams.go.tz');
   console.log('👤 Citizen: citizen@lams.go.tz');
-  console.log('🔑 Any password with 6+ characters will work for demo');
-  console.log('🔄 Redirect Rules:');
-  console.log('   Super Admin → superadmin.html');
-  console.log('   Admin → admin.html');
-  console.log('   Citizen → citizen.html');
 });

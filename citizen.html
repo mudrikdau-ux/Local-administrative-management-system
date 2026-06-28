@@ -30,71 +30,42 @@
     </div>
   </div>
 
-  <!-- Payment Modal -->
-  <div class="modal-overlay" id="paymentModalOverlay">
-    <div class="modal" id="paymentModal">
-      <div class="modal-content" id="paymentModalContent">
-        <button class="modal-close modal-close-btn" id="paymentModalCloseBtn">&times;</button>
-        <h2><i class="fas fa-credit-card"></i> Make Payment</h2>
-        <div id="paymentDetails"></div>
-        <div class="form-group">
-          <label>Payment Method</label>
-          <select id="paymentMethod">
-            <option value="mobile">📱 Mobile Money (M-Pesa/Tigo Pesa)</option>
-            <option value="bank">🏦 Bank Transfer</option>
-            <option value="card">💳 Credit/Debit Card</option>
-          </select>
+  <!-- Professional Payment Flow Modal -->
+  <div class="modal-overlay" id="proPaymentModalOverlay">
+    <div class="modal" id="proPaymentModal">
+      <div class="modal-content" id="proPaymentModalContent">
+        <button class="modal-close modal-close-btn" id="proPaymentCloseBtn">&times;</button>
+        <div class="payment-steps" id="paymentSteps">
+          <div class="step active" data-step="1"><span class="step-number">1</span><span class="step-label">Method</span></div>
+          <div class="step" data-step="2"><span class="step-number">2</span><span class="step-label">Details</span></div>
+          <div class="step" data-step="3"><span class="step-number">3</span><span class="step-label">Security</span></div>
+          <div class="step" data-step="4"><span class="step-number">4</span><span class="step-label">Review</span></div>
+          <div class="step" data-step="5"><span class="step-number">5</span><span class="step-label">Confirm</span></div>
         </div>
-        <div id="paymentMethodDetails">
-          <div class="form-group"><label>Phone Number</label><input type="text" placeholder="e.g. 255 7XX XXX XXX"></div>
-        </div>
-        <button class="btn btn-primary btn-full" id="processPaymentBtn"><i class="fas fa-lock"></i> Pay Now</button>
+        <div id="proPaymentStepContent"></div>
+        <div class="payment-nav-buttons" id="paymentNavButtons"></div>
       </div>
     </div>
   </div>
 
-  <!-- Outstanding Balance Payment Modal -->
-  <div class="modal-overlay" id="outstandingPaymentModalOverlay">
-    <div class="modal" id="outstandingPaymentModal">
-      <div class="modal-content" id="outstandingPaymentModalContent">
-        <button class="modal-close modal-close-btn" id="outstandingPaymentCloseBtn">&times;</button>
-        <h2><i class="fas fa-money-check-alt"></i> Pay Outstanding Balance</h2>
-        <div id="outstandingPaymentDetails"></div>
-        <form id="outstandingPaymentForm">
-          <div class="form-group">
-            <label>Payment Type *</label>
-            <select id="outstandingPaymentType" required>
-              <option value="">Select payment type</option>
-              <option value="mobile">Mobile Money (M-Pesa/Tigo Pesa/Airtel Money)</option>
-              <option value="bank">Bank Transfer (CRDB/NMB/NBC)</option>
-              <option value="card">Credit/Debit Card</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Control Number / Payment Reference *</label>
-            <input type="text" id="controlNumber" placeholder="e.g. 9914XXXXXXXXXX" required>
-          </div>
-          <div class="form-group">
-            <label>Transaction PIN *</label>
-            <input type="password" id="transactionPIN" placeholder="Enter your PIN" maxlength="6" required>
-          </div>
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="termsAgree" required> 
-              I confirm that the payment details are correct and agree to proceed
-            </label>
-          </div>
-          <button type="submit" class="btn btn-primary btn-full">
-            <i class="fas fa-check-circle"></i> Confirm & Pay TZS <span id="outstandingPayAmount">0</span>
-          </button>
-        </form>
+  <!-- Success Animation Modal -->
+  <div class="modal-overlay" id="successModalOverlay">
+    <div class="modal" id="successModal">
+      <div class="modal-content" style="text-align:center;padding:40px;">
+        <div class="success-animation">
+          <div class="success-circle"><i class="fas fa-check"></i></div>
+        </div>
+        <h2 style="color:#00b894;margin-top:20px;">Payment Successful!</h2>
+        <p id="successMessageText">Your payment has been processed successfully.</p>
+        <p style="color:var(--text-light);font-size:0.9rem;">Your document request is now being processed.</p>
+        <button class="btn btn-primary" onclick="closeSuccessModal()" style="margin-top:20px;">Continue</button>
       </div>
     </div>
   </div>
 
   <!-- Announcement Detail Modal -->
   <div class="modal-overlay" id="announcementModalOverlay">
-    <div class="modal" id="announcementModal">
+    <div class="modal" id="announcementModal" style="max-width:600px;">
       <div class="modal-content" id="announcementContent"></div>
     </div>
   </div>
@@ -254,34 +225,52 @@
           <div class="card"><div class="activity-list" id="dashboardActivityList"></div></div>
         </section>
 
+        <!-- ========== MY APPLICATIONS PAGE ========== -->
         <section class="page-content" id="page-applications">
           <div class="page-header"><h1 class="page-title">My Applications</h1><button class="btn btn-primary" id="newApplicationBtn"><i class="fas fa-plus"></i> New Application</button></div>
           <div class="filter-row">
             <select id="appStatusFilter"><option value="all">All Applications</option><option value="Pending">Pending</option><option value="Processing">Processing</option><option value="Approved">Approved</option><option value="Rejected">Rejected</option></select>
+            <input type="text" id="appSearchInput" class="search-input-inline" placeholder="Search applications...">
           </div>
-          <div class="table-container"><table><thead><tr><th>App ID</th><th>Document Type</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="appTableBody"></tbody></table></div>
+          <div class="table-responsive-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr><th>Photo</th><th>App ID</th><th>Document Type</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="appTableBody"></tbody>
+            </table>
+          </div>
         </section>
 
+        <!-- ========== MY PAYMENTS PAGE ========== -->
         <section class="page-content" id="page-payments">
           <h1 class="page-title">My Payments</h1>
-          <div class="balance-alert-card" id="outstandingBalanceCard" style="display:none;">
-            <div>
-              <h3><i class="fas fa-exclamation-circle"></i> Outstanding Balance</h3>
-              <p class="balance-amount" id="outstandingAmount">TZS 0</p>
-              <p class="balance-note">You have unpaid payment records</p>
+          <div class="outstanding-balance-hero" id="outstandingBalanceHero" style="display:none;">
+            <div class="balance-hero-card">
+              <div class="balance-hero-left">
+                <div class="balance-hero-icon"><i class="fas fa-exclamation-circle"></i></div>
+                <div>
+                  <h3>Outstanding Balance</h3>
+                  <p class="balance-hero-amount" id="outstandingBalanceAmount">TZS 0</p>
+                  <p class="balance-hero-note">You have unpaid payment records that require attention</p>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-lg" id="payOutstandingHeroBtn"><i class="fas fa-credit-card"></i> Pay Now</button>
             </div>
-            <button class="btn btn-primary" id="payOutstandingBtn">
-              <i class="fas fa-credit-card"></i> Pay Now
-            </button>
           </div>
           <div class="filter-row">
             <select id="paymentStatusFilter"><option value="all">All Payments</option><option value="Paid">Paid</option><option value="Unpaid">Unpaid</option></select>
             <input type="text" placeholder="Search payments..." id="paymentSearchInput" class="search-input-inline">
           </div>
-          <div class="table-container"><table><thead><tr><th>Payment ID</th><th>Document Type</th><th>Description</th><th>Amount</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="paymentTableBody"></tbody></table></div>
+          <div class="table-responsive-wrapper">
+            <table class="data-table">
+              <thead><tr><th>Payment ID</th><th>Document Type</th><th>Description</th><th>Amount</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="paymentTableBody"></tbody>
+            </table>
+          </div>
           <div class="pagination" id="paymentPagination"></div>
           <h2 class="section-subtitle">Payment History</h2>
-          <div class="table-container"><table><thead><tr><th>Payment ID</th><th>Document</th><th>Amount</th><th>Payment Date</th><th>Method</th><th>Status</th></tr></thead><tbody id="paymentHistoryBody"></tbody></table></div>
+          <div class="table-responsive-wrapper"><table class="data-table"><thead><tr><th>Payment ID</th><th>Document</th><th>Amount</th><th>Payment Date</th><th>Method</th><th>Status</th></tr></thead><tbody id="paymentHistoryBody"></tbody></table></div>
         </section>
 
         <section class="page-content" id="page-messages">
@@ -299,6 +288,7 @@
           </div>
         </section>
 
+        <!-- ========== ANNOUNCEMENTS PAGE (WITH IMAGE SUPPORT) ========== -->
         <section class="page-content" id="page-announcements">
           <h1 class="page-title">Community Announcements</h1>
           <div class="filter-row">
@@ -313,7 +303,7 @@
         <section class="page-content" id="page-documents">
           <h1 class="page-title">My Documents</h1>
           <p class="page-description">Download your approved and issued documents</p>
-          <div class="table-container"><table><thead><tr><th>Document</th><th>Document ID</th><th>Type</th><th>Issue Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="documentsTableBody"></tbody></table></div>
+          <div class="table-responsive-wrapper"><table class="data-table"><thead><tr><th>Document</th><th>Document ID</th><th>Type</th><th>Issue Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="documentsTableBody"></tbody></table></div>
         </section>
 
         <section class="page-content" id="page-profile">
