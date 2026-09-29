@@ -20,7 +20,7 @@
     <div class="container nav-container">
       <a href="index.html" class="logo" aria-label="LAMS Home">
         <i class="fas fa-landmark"></i>
-        <span class="logo-text">LAMS</span>
+        <span class="logo-text" id="systemNameShort">LAMS</span>
       </a>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
         <span class="hamburger-line"></span>
@@ -67,29 +67,29 @@
         <div class="section-header scroll-reveal">
           <h2 id="contactInfoTitle">Get In Touch</h2>
         </div>
-        <div class="info-cards-grid">
+        <div class="info-cards-grid" id="infoCardsGrid">
           <div class="info-card scroll-reveal">
             <div class="info-icon"><i class="fas fa-phone-alt"></i></div>
             <h3 id="phoneTitle">Phone</h3>
-            <p>+255 123 456 789</p>
+            <p id="contactPhone">+255 123 456 789</p>
             <p class="info-note" id="phoneNote">Available during working hours</p>
           </div>
           <div class="info-card scroll-reveal">
             <div class="info-icon"><i class="fas fa-envelope"></i></div>
             <h3 id="emailTitle">Email</h3>
-            <p>info@lams.go.tz</p>
+            <p id="contactEmail">info@lams.go.tz</p>
             <p class="info-note" id="emailNote">We respond within 24 hours</p>
           </div>
           <div class="info-card scroll-reveal">
             <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
             <h3 id="locationTitle">Location</h3>
-            <p>Mpendae,<br>Zanzibar, Tanzania</p>
+            <p id="contactAddress">Mpendae,<br>Zanzibar, Tanzania</p>
             <p class="info-note" id="locationNote">Local Government Building</p>
           </div>
           <div class="info-card scroll-reveal">
             <div class="info-icon"><i class="fas fa-clock"></i></div>
             <h3 id="hoursTitle">Working Hours</h3>
-            <p>Mon – Fri: 8:00 AM – 5:00 PM</p>
+            <p id="contactHours">Mon – Fri: 8:00 AM – 5:00 PM</p>
             <p class="info-note" id="hoursNote">Weekend: Emergency only</p>
           </div>
         </div>
@@ -109,7 +109,7 @@
                 <label for="fullName" id="fullNameLabel">Full Name <span class="required">*</span></label>
                 <div class="input-wrapper">
                   <i class="fas fa-user"></i>
-                  <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
+                  <input type="text" id="fullName" name="full_name" placeholder="Enter your full name" required>
                 </div>
                 <span class="error-message" id="fullNameError"></span>
               </div>
@@ -136,13 +136,13 @@
                 <div class="input-wrapper">
                   <i class="fas fa-tag"></i>
                   <select id="subject" name="subject" required>
-                    <option value="" data-en="Select a subject" data-sw="Chagua mada">Select a subject</option>
-                    <option value="general" data-en="General Inquiry" data-sw="Uchunguzi wa Jumla">General Inquiry</option>
-                    <option value="document" data-en="Document Application" data-sw="Maombi ya Hati">Document Application</option>
-                    <option value="payment" data-en="Payment Issue" data-sw="Suala la Malipo">Payment Issue</option>
-                    <option value="complaint" data-en="Complaint" data-sw="Malalamiko">Complaint</option>
-                    <option value="suggestion" data-en="Suggestion" data-sw="Pendekezo">Suggestion</option>
-                    <option value="other" data-en="Other" data-sw="Nyingine">Other</option>
+                    <option value="">Select a subject</option>
+                    <option value="general">General Inquiry</option>
+                    <option value="document">Document Application</option>
+                    <option value="payment">Payment Issue</option>
+                    <option value="complaint">Complaint</option>
+                    <option value="suggestion">Suggestion</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
                 <span class="error-message" id="subjectError"></span>
@@ -157,7 +157,7 @@
               <span class="error-message" id="messageError"></span>
             </div>
             <button type="submit" class="btn btn-primary btn-submit" id="submitBtn">
-              <i class="fas fa-paper-plane"></i> Send Message
+              <i class="fas fa-paper-plane"></i> <span id="submitBtnText">Send Message</span>
             </button>
           </form>
           <div class="form-success" id="formSuccess">
@@ -181,12 +181,21 @@
             <i class="fas fa-building"></i>
             <div>
               <h3 id="officeName">Local Administration Office</h3>
-              <p>Mpendae, Local Government Building</p>
-              <p>Zanzibar, Tanzania</p>
+              <p id="officeAddress">Mpendae, Local Government Building, Zanzibar, Tanzania</p>
             </div>
           </div>
           <div class="map-container" id="mapContainer">
-            <!-- Map loaded via JavaScript -->
+            <!-- Google Maps Embed API iframe -->
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3967.6200!2d39.2026!3d-6.1659!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x185c4bae169bd6f1%3A0x4e3dfcf3a2c5c9e1!2sMpendae%2C%20Zanzibar%2C%20Tanzania!5e0!3m2!1sen!2stz!4v1680000000000"
+              width="100%"
+              height="100%"
+              style="border:0;"
+              allowfullscreen=""
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              title="LAMS Office Location - Mpendae, Zanzibar">
+            </iframe>
           </div>
         </div>
       </div>
@@ -198,17 +207,17 @@
         <div class="section-header scroll-reveal">
           <h2 id="socialTitle">Connect With Us</h2>
         </div>
-        <div class="social-icons-row scroll-reveal">
-          <a href="#" class="social-icon-link" aria-label="Facebook">
+        <div class="social-icons-row scroll-reveal" id="socialIconsRow">
+          <a href="#" class="social-icon-link" aria-label="Facebook" id="socialFacebook">
             <i class="fab fa-facebook-f"></i>
           </a>
-          <a href="#" class="social-icon-link" aria-label="Instagram">
+          <a href="#" class="social-icon-link" aria-label="Instagram" id="socialInstagram">
             <i class="fab fa-instagram"></i>
           </a>
-          <a href="#" class="social-icon-link" aria-label="X (Twitter)">
+          <a href="#" class="social-icon-link" aria-label="X (Twitter)" id="socialTwitter">
             <i class="fab fa-twitter"></i>
           </a>
-          <a href="#" class="social-icon-link" aria-label="WhatsApp">
+          <a href="#" class="social-icon-link" aria-label="WhatsApp" id="socialWhatsApp">
             <i class="fab fa-whatsapp"></i>
           </a>
         </div>
@@ -228,7 +237,7 @@
               <i class="fas fa-plus"></i>
             </button>
             <div class="faq-answer">
-              <p id="faq1Answer">Call us at +255 123 456 789, email info@lams.go.tz, or visit our office during working hours.</p>
+              <p id="faq1Answer">Call us at +255 123 456 789, email info@lams.go.tz, or visit our office in Mpendae, Zanzibar during working hours.</p>
             </div>
           </div>
           <div class="faq-item scroll-reveal">
@@ -273,7 +282,7 @@
   <!-- ==================== FOOTER ==================== -->
   <footer class="footer">
     <div class="container footer-bottom">
-      <p>&copy; <span id="year"></span> Local Administration Management System. All rights reserved.</p>
+      <p>&copy; <span id="year"></span> <span id="footerOrgName">Local Administration Management System</span>. All rights reserved.</p>
     </div>
   </footer>
 
@@ -283,6 +292,7 @@
   </button>
 
   <!-- JavaScript File -->
+  <script src="js/api.js"></script>
   <script src="js/contact.js"></script>
 </body>
 </html>

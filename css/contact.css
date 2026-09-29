@@ -1,5 +1,4 @@
-/* contact.css */
-/* CSS Variables - LAMS Design System */
+/* contact.css - Complete */
 :root {
   --primary-color: #0066cc;
   --secondary-color: #004080;
@@ -393,6 +392,10 @@ body.dark-mode .contact-form-section {
   justify-content: center; 
   gap: 8px; 
 }
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .form-success { 
   display: none; 
   text-align: center; 
@@ -451,8 +454,13 @@ body.dark-mode .contact-form-section {
   width: 100%;
   height: 350px;
   background: var(--border-color);
+  position: relative;
+  overflow: hidden;
 }
 .map-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   border: 0;
@@ -580,48 +588,7 @@ body.dark-mode .social-section {
 .footer { 
   background: var(--footer-bg); 
   color: var(--footer-text); 
-  padding-top: 50px; 
-}
-.footer-grid { 
-  display: grid; 
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
-  gap: 35px; 
-  padding-bottom: 35px; 
-}
-.footer-logo { 
-  display: flex; 
-  align-items: center; 
-  gap: 10px; 
-  font-size: 1.6rem; 
-  color: #fff; 
-  margin-bottom: 12px; 
-}
-.footer-col p { font-size: 0.9rem; opacity: 0.85; }
-.social-icons { display: flex; gap: 14px; margin-top: 18px; }
-.social-icons a { 
-  color: var(--footer-text); 
-  font-size: 1.2rem; 
-  transition: color 0.3s; 
-}
-.social-icons a:hover { color: #fff; }
-.footer-col h4 { color: #fff; margin-bottom: 16px; font-size: 1rem; }
-.footer-col ul li { margin-bottom: 8px; }
-.footer-col ul li a { 
-  font-size: 0.9rem; 
-  opacity: 0.85; 
-  transition: opacity 0.2s; 
-}
-.footer-col ul li a:hover { opacity: 1; color: #fff; }
-.contact-info li { 
-  display: flex; 
-  align-items: center; 
-  gap: 8px; 
-  font-size: 0.9rem; 
-}
-.contact-info i { 
-  color: var(--primary-color); 
-  width: 16px; 
-  flex-shrink: 0; 
+  padding: 25px 0; 
 }
 .footer-bottom { 
   border-top: 1px solid rgba(255,255,255,0.1); 

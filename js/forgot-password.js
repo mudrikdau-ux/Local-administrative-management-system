@@ -1,15 +1,25 @@
 // forgot-password.js - Multi-step password reset with OTP verification
+// Version: 2.1 - Fixed OTP reuse issue
 
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
 
+  const API = window.API;
+  if (!API) { 
+    console.error('❌ API not loaded!');
+    showToast('error', 'System initialization error. Please refresh the page.');
+    return;
+  }
+
   // ==================== STATE ====================
   let currentStep = 1;
   let userEmail = '';
+  let verifiedOTP = '';  // Store verified OTP for password reset
   let otpCode = '';
   let timerInterval = null;
-  let timeLeft = 300; // 5 minutes in seconds
+  let timeLeft = 300; // 5 minutes
   let isResending = false;
+  let isSubmitting = false;
 
   // ==================== DOM REFERENCES ====================
   const authCard = document.getElementById('authCard');
@@ -18,13 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const step3Content = document.getElementById('step3Content');
   const successContent = document.getElementById('successContent');
   const progressSteps = document.querySelectorAll('.progress-step');
-  
+
   // Step 1
   const emailForm = document.getElementById('emailForm');
   const emailInput = document.getElementById('emailInput');
   const emailError = document.getElementById('emailError');
   const emailSubmitBtn = document.getElementById('emailSubmitBtn');
-  
+
   // Step 2
   const otpForm = document.getElementById('otpForm');
   const otpInputs = document.querySelectorAll('.otp-input');
@@ -33,8 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const otpEmailDisplay = document.getElementById('otpEmailDisplay');
   const timerFill = document.getElementById('timerFill');
   const timerText = document.getElementById('timerText');
+  const timerWrapper = document.getElementById('timerWrapper');
   const resendOtpBtn = document.getElementById('resendOtpBtn');
-  
+
   // Step 3
   const passwordForm = document.getElementById('passwordForm');
   const newPasswordInput = document.getElementById('newPasswordInput');
@@ -54,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPasswordToggle();
     setupPasswordStrength();
     setupEventListeners();
+    otpSubmitBtn.disabled = true;
     console.log('🔐 LAMS Forgot Password - Ready');
   }
 
@@ -73,7 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (step === 4) {
       successContent.classList.add('active');
     } else {
-      document.getElementById(`step${step}Content`).classList.add('active');
+      const stepEl = document.getElementById(`step${step}Content`);
+      if (stepEl) stepEl.classList.add('active');
     }
     
     // Update progress indicators
@@ -84,34 +97,38 @@ document.addEventListener('DOMContentLoaded', () => {
       if (stepNum === step && step < 4) ps.classList.add('active');
     });
 
-    // If going to step 4, mark all as completed
     if (step === 4) {
       progressSteps.forEach(ps => ps.classList.add('completed'));
     }
 
     // Trigger card animation
     authCard.style.animation = 'none';
-    authCard.offsetHeight; // reflow
+    authCard.offsetHeight;
     authCard.style.animation = 'cardAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
   }
 
   // ==================== EVENT LISTENERS ====================
   function setupEventListeners() {
-    // Step 1: Email Form
     emailForm.addEventListener('submit', handleEmailSubmit);
-    
-    // Step 2: OTP Form
     otpForm.addEventListener('submit', handleOTPSubmit);
     resendOtpBtn.addEventListener('click', handleResendOTP);
-    
-    // Step 3: Password Form
     passwordForm.addEventListener('submit', handlePasswordSubmit);
+    
+    // Reset form when going back to step 1 (optional)
+    document.querySelectorAll('.footer-link[href="login.html"]').forEach(link => {
+      link.addEventListener('click', () => {
+        clearSession();
+      });
+    });
   }
 
   // ==================== STEP 1: EMAIL VERIFICATION ====================
-  function handleEmailSubmit(e) {
+  async function handleEmailSubmit(e) {
     e.preventDefault();
+    if (isSubmitting) return;
+    
     emailError.classList.remove('show');
+    emailInput.classList.remove('error');
     
     const email = emailInput.value.trim();
     
@@ -120,45 +137,60 @@ document.addEventListener('DOMContentLoaded', () => {
       showEmailError('Please enter your email address');
       return;
     }
-    if (!isValidEmail(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       showEmailError('Please enter a valid email address');
       return;
     }
     
-    // Show loading
+    isSubmitting = true;
     setButtonLoading(emailSubmitBtn, true);
     emailInput.disabled = true;
-    
-    // Simulate API call (backend integration point)
-    setTimeout(() => {
-      userEmail = email;
+
+    try {
+      // Call citizen forgot password endpoint
+      const res = await API.auth.citizenForgotPassword(email);
+      console.log('📧 Forgot password response:', res);
       
-      // Generate OTP (in production, this comes from backend)
-      otpCode = generateOTP();
-      
-      // API CALL: POST /api/citizen/auth/forgot-password
-      // Body: { email: userEmail }
-      // Response: OTP sent to email
-      
-      console.log(`📧 OTP for ${userEmail}: ${otpCode}`);
-      
-      // Display email in step 2
-      otpEmailDisplay.textContent = maskEmail(userEmail);
-      
-      // Reset loading
+      if (res.success) {
+        userEmail = email;
+        verifiedOTP = ''; // Reset stored OTP
+        otpCode = res.data?.otp || generateOTP();
+        console.log(`📧 OTP for ${userEmail}: ${otpCode}`);
+        
+        otpEmailDisplay.textContent = maskEmail(userEmail);
+        
+        setButtonLoading(emailSubmitBtn, false);
+        emailInput.disabled = false;
+        showToast('success', 'Verification code sent to your email');
+        
+        // Move to step 2
+        showStep(2);
+        startTimer();
+        clearOTPInputs();
+        otpSubmitBtn.disabled = true;
+        otpInputs.forEach(input => input.disabled = false);
+        setTimeout(() => otpInputs[0].focus(), 400);
+      } else {
+        // Check if error message indicates admin or super admin
+        const msg = res.message || '';
+        if (msg.toLowerCase().includes('admin') || msg.toLowerCase().includes('super')) {
+          showToast('info', msg);
+        } else {
+          showEmailError(msg || 'Email not found. Please check and try again.');
+        }
+        setButtonLoading(emailSubmitBtn, false);
+        emailInput.disabled = false;
+        isSubmitting = false;
+      }
+    } catch (error) {
+      console.error('❌ Email submit error:', error);
+      showEmailError('Network error. Please check your connection.');
       setButtonLoading(emailSubmitBtn, false);
       emailInput.disabled = false;
-      
-      // Show success toast
-      showToast('success', 'Verification code sent to your email');
-      
-      // Move to step 2
-      showStep(2);
-      startTimer();
-      clearOTPInputs();
-      setTimeout(() => otpInputs[0].focus(), 300);
-      
-    }, 1500);
+      isSubmitting = false;
+    }
+    
+    isSubmitting = false;
   }
 
   function showEmailError(msg) {
@@ -190,7 +222,12 @@ document.addEventListener('DOMContentLoaded', () => {
           input.classList.add('filled');
         }
         
-        // Check if all filled
+        // Enable submit button if all filled
+        const allFilled = Array.from(otpInputs).every(inp => inp.value.length === 1);
+        if (allFilled && timeLeft > 0) {
+          otpSubmitBtn.disabled = false;
+        }
+        
         if (index === 5 && value.length === 1) {
           input.classList.add('filled');
         }
@@ -203,12 +240,10 @@ document.addEventListener('DOMContentLoaded', () => {
           otpInputs[index - 1].classList.remove('filled');
         }
         
-        // Arrow keys
-        if (e.key === 'ArrowLeft' && index > 0) {
-          otpInputs[index - 1].focus();
-        }
-        if (e.key === 'ArrowRight' && index < 5) {
-          otpInputs[index + 1].focus();
+        // Submit on Enter
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          otpForm.dispatchEvent(new Event('submit'));
         }
       });
       
@@ -229,6 +264,12 @@ document.addEventListener('DOMContentLoaded', () => {
           // Focus last filled or next empty
           const focusIndex = Math.min(digits.length, 5);
           otpInputs[focusIndex].focus();
+          
+          // Enable submit if all filled
+          const allFilled = Array.from(otpInputs).every(inp => inp.value.length === 1);
+          if (allFilled && timeLeft > 0) {
+            otpSubmitBtn.disabled = false;
+          }
         }
       });
     });
@@ -240,6 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
       input.classList.remove('filled', 'error');
     });
     otpError.classList.remove('show');
+    otpSubmitBtn.disabled = true;
   }
 
   function getOTPValue() {
@@ -264,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         timerText.classList.add('danger');
         otpSubmitBtn.disabled = true;
         otpInputs.forEach(input => input.disabled = true);
+        verifiedOTP = ''; // Clear stored OTP on expiry
         showToast('error', 'Verification code expired');
       }
     }, 1000);
@@ -276,17 +319,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     timerFill.style.width = percentage + '%';
     
+    // Reset classes
+    timerFill.classList.remove('warning', 'danger');
+    timerText.classList.remove('warning', 'danger');
+    
     if (timeLeft <= 60) {
       timerFill.classList.add('danger');
-      timerFill.classList.remove('warning');
       timerText.classList.add('danger');
     } else if (timeLeft <= 120) {
       timerFill.classList.add('warning');
-      timerFill.classList.remove('danger');
       timerText.classList.add('warning');
-    } else {
-      timerFill.classList.remove('warning', 'danger');
-      timerText.classList.remove('warning', 'danger');
     }
     
     timerText.innerHTML = `Code expires in: <strong>${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</strong>`;
@@ -299,13 +341,16 @@ document.addEventListener('DOMContentLoaded', () => {
     timerFill.style.width = '100%';
     timerText.classList.remove('warning', 'danger');
     timerText.innerHTML = 'Code expires in: <strong>05:00</strong>';
-    otpSubmitBtn.disabled = false;
+    otpSubmitBtn.disabled = true;
     otpInputs.forEach(input => input.disabled = false);
+    verifiedOTP = ''; // Clear stored OTP on timer reset
   }
 
   // ==================== STEP 2: OTP VERIFICATION ====================
-  function handleOTPSubmit(e) {
+  async function handleOTPSubmit(e) {
     e.preventDefault();
+    if (isSubmitting) return;
+    
     otpError.classList.remove('show');
     otpInputs.forEach(inp => inp.classList.remove('error'));
     
@@ -318,37 +363,54 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
-    // Show loading
+    if (timeLeft <= 0) {
+      showOTPError('OTP has expired. Please request a new one.');
+      return;
+    }
+    
+    isSubmitting = true;
     setButtonLoading(otpSubmitBtn, true);
     otpInputs.forEach(inp => inp.disabled = true);
-    
-    // Simulate API verification (backend integration point)
-    setTimeout(() => {
-      // API CALL: POST /api/citizen/auth/verify-reset-otp
-      // Body: { email: userEmail, otp: enteredOTP }
+
+    try {
+      console.log('🔐 Verifying OTP for:', userEmail);
+      const res = await API.auth.citizenVerifyResetOTP(userEmail, enteredOTP);
+      console.log('🔐 OTP verification response:', res);
       
-      // For demo: OTP "123456" is always valid, or check against generated OTP
-      const isValid = enteredOTP === otpCode || enteredOTP === '123456';
-      
-      if (isValid) {
+      if (res.success) {
+        // ✅ STORE THE VERIFIED OTP FOR PASSWORD RESET
+        verifiedOTP = enteredOTP;
+        console.log('✅ Verified OTP stored:', verifiedOTP);
+        
         setButtonLoading(otpSubmitBtn, false);
+        otpInputs.forEach(inp => inp.disabled = false);
         showToast('success', 'OTP verified successfully');
         
-        // Stop timer
         if (timerInterval) clearInterval(timerInterval);
         
         // Move to step 3
         showStep(3);
-        setTimeout(() => newPasswordInput.focus(), 300);
+        setTimeout(() => newPasswordInput.focus(), 400);
+        isSubmitting = false;
       } else {
         setButtonLoading(otpSubmitBtn, false);
         otpInputs.forEach(inp => inp.disabled = false);
-        showOTPError('Invalid verification code. Please try again.');
+        showOTPError(res.message || 'Invalid verification code. Please try again.');
         otpInputs.forEach(inp => inp.classList.add('error'));
         clearOTPInputs();
-        setTimeout(() => otpInputs[0].focus(), 300);
+        otpSubmitBtn.disabled = true;
+        verifiedOTP = ''; // Clear stored OTP on failure
+        setTimeout(() => otpInputs[0].focus(), 400);
+        isSubmitting = false;
       }
-    }, 1500);
+    } catch (error) {
+      console.error('❌ OTP verify error:', error);
+      setButtonLoading(otpSubmitBtn, false);
+      otpInputs.forEach(inp => inp.disabled = false);
+      showOTPError('Network error. Please try again.');
+      verifiedOTP = ''; // Clear stored OTP on error
+      isSubmitting = false;
+    }
   }
 
   function showOTPError(msg) {
@@ -356,33 +418,39 @@ document.addEventListener('DOMContentLoaded', () => {
     otpError.classList.add('show');
   }
 
-  function handleResendOTP() {
-    if (isResending) return;
-    if (timeLeft > 240) {
-      showToast('info', 'Please wait before requesting a new code');
-      return;
-    }
+  // ==================== RESEND OTP ====================
+  async function handleResendOTP() {
+    if (isResending || isSubmitting) return;
     
     isResending = true;
     resendOtpBtn.disabled = true;
-    
-    // Simulate resend (backend integration point)
-    setTimeout(() => {
-      // API CALL: POST /api/citizen/auth/resend-otp
-      // Body: { email: userEmail }
+    verifiedOTP = ''; // ✅ Clear stored OTP on resend
+
+    try {
+      const res = await API.auth.citizenResendOTP(userEmail);
+      console.log('📧 Resend OTP response:', res);
       
-      otpCode = generateOTP();
-      console.log(`📧 Resent OTP for ${userEmail}: ${otpCode}`);
-      
-      clearOTPInputs();
-      resetTimer();
-      startTimer();
-      setTimeout(() => otpInputs[0].focus(), 300);
-      
+      if (res.success) {
+        otpCode = res.data?.otp || generateOTP();
+        console.log(`📧 Resent OTP for ${userEmail}: ${otpCode}`);
+        
+        clearOTPInputs();
+        resetTimer();
+        startTimer();
+        otpInputs.forEach(input => input.disabled = false);
+        otpSubmitBtn.disabled = true;
+        setTimeout(() => otpInputs[0].focus(), 400);
+        showToast('success', 'New verification code sent');
+      } else {
+        showToast('error', res.message || 'Failed to resend OTP');
+      }
+    } catch (error) {
+      console.error('❌ Resend OTP error:', error);
+      showToast('error', 'Network error. Please try again.');
+    } finally {
       isResending = false;
       resendOtpBtn.disabled = false;
-      showToast('success', 'New verification code sent');
-    }, 1000);
+    }
   }
 
   // ==================== PASSWORD STRENGTH ====================
@@ -397,8 +465,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       const strength = checkPasswordStrength(password);
-      
-      // Update strength bar
       const percentages = { weak: 25, medium: 50, strong: 75, 'very-strong': 100 };
       const colors = { weak: '#ef4444', medium: '#f59e0b', strong: '#3b82f6', 'very-strong': '#00b894' };
       
@@ -407,7 +473,6 @@ document.addEventListener('DOMContentLoaded', () => {
       strengthText.textContent = `Password Strength: ${strength.label}`;
       strengthText.style.color = colors[strength.level];
       
-      // Update requirements
       updatePasswordRequirements(password);
     });
   }
@@ -439,8 +504,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     Object.keys(reqs).forEach(req => {
       const span = document.querySelector(`[data-req="${req}"]`);
-      if (reqs[req]) span.classList.add('met');
-      else span.classList.remove('met');
+      if (span) {
+        if (reqs[req]) span.classList.add('met');
+        else span.classList.remove('met');
+      }
     });
   }
 
@@ -466,8 +533,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==================== STEP 3: RESET PASSWORD ====================
-  function handlePasswordSubmit(e) {
+  async function handlePasswordSubmit(e) {
     e.preventDefault();
+    if (isSubmitting) return;
+    
     passwordError.classList.remove('show');
     
     const newPassword = newPasswordInput.value;
@@ -499,20 +568,52 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
-    // Show loading
-    setButtonLoading(passwordSubmitBtn, true);
+    // ✅ Check if we have a verified OTP
+    if (!verifiedOTP) {
+      showPasswordError('OTP verification required. Please go back and verify your OTP.');
+      return;
+    }
     
-    // Simulate API call (backend integration point)
-    setTimeout(() => {
-      // API CALL: POST /api/citizen/auth/reset-password
-      // Body: { email: userEmail, otp: otpCode, new_password: newPassword, confirm_password: confirmPassword }
+    isSubmitting = true;
+    setButtonLoading(passwordSubmitBtn, true);
+
+    try {
+      // ✅ Use the stored verified OTP
+      const res = await API.auth.citizenResetPassword(userEmail, verifiedOTP, newPassword, confirmPassword);
+      console.log('🔑 Password reset response:', res);
       
+      if (res.success) {
+        setButtonLoading(passwordSubmitBtn, false);
+        showToast('success', 'Password reset successful!');
+        // Clear stored OTP for security
+        verifiedOTP = '';
+        showStep(4);
+        isSubmitting = false;
+      } else {
+        setButtonLoading(passwordSubmitBtn, false);
+        // If error says OTP expired, reset the flow
+        const msg = res.message || '';
+        if (msg.toLowerCase().includes('expired') || msg.toLowerCase().includes('invalid')) {
+          showPasswordError('OTP has expired or is invalid. Please restart the process.');
+          verifiedOTP = '';
+          // Reset to step 1 after a moment
+          setTimeout(() => {
+            showStep(1);
+            resetTimer();
+            clearOTPInputs();
+            verifiedOTP = '';
+          }, 2500);
+        } else {
+          showPasswordError(msg || 'Failed to reset password. Please try again.');
+        }
+        isSubmitting = false;
+      }
+    } catch (error) {
+      console.error('❌ Password reset error:', error);
       setButtonLoading(passwordSubmitBtn, false);
-      showToast('success', 'Password reset successful!');
-      
-      // Show success screen
-      showStep(4);
-    }, 1500);
+      showPasswordError('Network error. Please try again.');
+      isSubmitting = false;
+    }
   }
 
   function showPasswordError(msg) {
@@ -521,10 +622,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==================== UTILITY FUNCTIONS ====================
-  function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-
   function maskEmail(email) {
     const [name, domain] = email.split('@');
     if (name.length <= 2) return `${name[0]}***@${domain}`;
@@ -536,28 +633,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setButtonLoading(button, isLoading) {
+    if (!button) return;
     const btnText = button.querySelector('.btn-text');
     const btnLoader = button.querySelector('.btn-loader');
     
     if (isLoading) {
-      btnText.style.display = 'none';
-      btnLoader.style.display = 'inline-flex';
+      if (btnText) btnText.style.display = 'none';
+      if (btnLoader) btnLoader.style.display = 'inline-flex';
       button.disabled = true;
     } else {
-      btnText.style.display = 'inline';
-      btnLoader.style.display = 'none';
+      if (btnText) btnText.style.display = 'inline';
+      if (btnLoader) btnLoader.style.display = 'none';
       button.disabled = false;
     }
   }
 
   function showToast(type, message) {
     const container = document.getElementById('toastContainer');
+    if (!container) return;
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     const icons = { success: 'fa-check-circle', error: 'fa-times-circle', info: 'fa-info-circle', warning: 'fa-exclamation-triangle' };
     toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> ${message}`;
     container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3500);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
+  function clearSession() {
+    // Clear any session data if needed
+    try {
+      if (window.API && window.API.clearSession) {
+        window.API.clearSession();
+      }
+    } catch (e) {
+      // Ignore
+    }
   }
 
   // ==================== START ====================

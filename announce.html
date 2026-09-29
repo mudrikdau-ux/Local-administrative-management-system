@@ -20,7 +20,7 @@
     <div class="container nav-container">
       <a href="index.html" class="logo" aria-label="LAMS Home">
         <i class="fas fa-landmark"></i>
-        <span class="logo-text">LAMS</span>
+        <span class="logo-text" id="systemNameShort">LAMS</span>
       </a>
       <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
         <span class="hamburger-line"></span>
@@ -74,13 +74,7 @@
           </div>
           <div class="filter-group">
             <select id="categoryFilter" aria-label="Filter by category">
-              <option value="all" data-en="All Categories" data-sw="Makundi Yote">All Categories</option>
-              <option value="general" data-en="General Announcements" data-sw="Matangazo ya Jumla">General Announcements</option>
-              <option value="notice" data-en="Community Notices" data-sw="Notisi za Jamii">Community Notices</option>
-              <option value="event" data-en="Events" data-sw="Matukio">Events</option>
-              <option value="emergency" data-en="Emergency Notices" data-sw="Notisi za Dharura">Emergency Notices</option>
-              <option value="meeting" data-en="Community Meetings" data-sw="Mikutano ya Jamii">Community Meetings</option>
-              <option value="development" data-en="Development Projects" data-sw="Miradi ya Maendeleo">Development Projects</option>
+              <option value="all">All Categories</option>
             </select>
           </div>
         </div>
@@ -104,6 +98,12 @@
         <div class="loading-indicator" id="loadingIndicator" style="display: none;">
           <i class="fas fa-spinner fa-spin"></i>
           <p id="loadingText">Loading announcements...</p>
+        </div>
+        <!-- Pagination -->
+        <div class="pagination-container" id="paginationContainer" style="display: none;">
+          <button class="pagination-btn" id="prevPageBtn" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+          <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
+          <button class="pagination-btn" id="nextPageBtn">Next <i class="fas fa-chevron-right"></i></button>
         </div>
       </div>
     </section>
@@ -156,7 +156,7 @@
   <!-- ==================== FOOTER ==================== -->
   <footer class="footer">
     <div class="container footer-bottom">
-      <p>&copy; <span id="year"></span> Local Administration Management System. All rights reserved.</p>
+      <p>&copy; <span id="year"></span> <span id="footerOrgName">Local Administration Management System</span>. All rights reserved.</p>
     </div>
   </footer>
    <!-- Back to Top Button -->
@@ -165,6 +165,7 @@
   </button>
 
   <!-- JavaScript File -->
+  <script src="js/api.js"></script>
   <script src="js/announce.js"></script>
 </body>
 </html>

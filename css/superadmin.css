@@ -217,9 +217,6 @@ body {
 .notification-item .notif-content { flex: 1; }
 .notification-item .notif-content p { font-size: 0.85rem; margin-bottom: 3px; }
 .notification-item .notif-content span { font-size: 0.7rem; color: var(--text-light); }
-.notification-item .notif-actions { display: flex; gap: 5px; }
-.notif-actions button { background: none; border: none; color: var(--text-light); cursor: pointer; font-size: 0.8rem; padding: 3px 6px; border-radius: 4px; }
-.notif-actions button:hover { background: var(--bg); }
 .no-notifications { text-align: center; color: var(--text-light); padding: 20px; font-size: 0.9rem; }
 .header-user img { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
 

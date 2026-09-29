@@ -12,6 +12,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
   <link rel="stylesheet" href="css/superadmin.css">
+
+  <!-- ============================================================
+       🔴 IMPORTANT: Load API FIRST - api.js is in js folder!
+       ============================================================ -->
+  <script src="js/api.js"></script>
 </head>
 <body>
   <!-- Toast Container -->
@@ -82,7 +87,11 @@
 
       <div class="sidebar-user">
         <div class="user-avatar">
-          <img src="https://ui-avatars.com/api/?name=Super+Admin&background=0066cc&color=fff&size=80" alt="Super Admin" id="sidebarAvatar">
+          <!-- ✅ FIX: Use a placeholder initially, JS will update it -->
+          <img src="https://ui-avatars.com/api/?name=Super+Admin&background=0066cc&color=fff&size=80" 
+               alt="Super Admin" 
+               id="sidebarAvatar"
+               onerror="this.src='https://ui-avatars.com/api/?name=Super+Admin&background=0066cc&color=fff&size=80&t=' + Date.now()">
           <span class="status-badge online"></span>
         </div>
         <div class="user-info">
@@ -188,7 +197,11 @@
             </div>
           </div>
           <div class="header-user">
-            <img src="https://ui-avatars.com/api/?name=Super+Admin&background=0066cc&color=fff&size=40" alt="User" id="headerAvatar">
+            <!-- ✅ FIX: Add onerror fallback -->
+            <img src="https://ui-avatars.com/api/?name=Super+Admin&background=0066cc&color=fff&size=40" 
+                 alt="User" 
+                 id="headerAvatar"
+                 onerror="this.src='https://ui-avatars.com/api/?name=Super+Admin&background=0066cc&color=fff&size=40&t=' + Date.now()">
           </div>
         </div>
       </header>
@@ -196,6 +209,10 @@
       <!-- Dynamic Page Content -->
       <div class="page-content" id="pageContent">
         <!-- Pages load here dynamically -->
+        <div style="text-align:center;padding:50px;color:var(--text-light);">
+          <i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i>
+          <p>Loading Super Admin Panel...</p>
+        </div>
       </div>
     </main>
   </div>
@@ -205,7 +222,10 @@
 
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Main JavaScript -->
+  
+  <!-- ============================================================
+       🔴 IMPORTANT: Load superadmin.js AFTER api.js
+       ============================================================ -->
   <script src="js/superadmin.js"></script>
 </body>
 </html>

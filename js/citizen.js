@@ -1,502 +1,686 @@
-// citizen.js - Professional Version with Enhanced Payment Flow
+// citizen.js - LAMS Citizen Portal (Fully Fixed - No Auth Loop)
 document.addEventListener('DOMContentLoaded', () => {
-  // ==================== DATA STORE ====================
-  function getStore(key, defaultValue) {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : defaultValue;
-  }
-  function setStore(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
 
-  let applications = getStore('citizen_applications', [
-    { id: 'APP-001', docType: 'Residence Confirmation Letter', date: '2026-06-10', status: 'Approved', reason: 'For bank account opening', notes: '' },
-    { id: 'APP-002', docType: 'Identity Confirmation Letter', date: '2026-06-15', status: 'Pending', reason: 'For passport application', notes: '' },
-    { id: 'APP-003', docType: 'Business Permit Support Letter', date: '2026-06-18', status: 'Pending', reason: 'Starting small business', notes: 'Need for Mtaa office' },
-    { id: 'APP-004', docType: 'Recommendation Letter', date: '2026-05-20', status: 'Approved', reason: 'Job application', notes: '' },
-  ]);
+  // ==================== HELPER FUNCTIONS ====================
+  const isOnLoginPage = () => {
+    const path = window.location.pathname.toLowerCase();
+    return path.includes('login.html') || path.includes('forgot-password.html') || path === '/' || path === '/index.html';
+  };
 
-  let payments = getStore('citizen_payments', [
-    { id: 'PAY-001', appId: 'APP-001', docType: 'Residence Confirmation Letter', description: 'Document Processing Fee', amount: 15000, date: '2026-06-10', status: 'Paid', method: 'Mobile Money', transactionId: 'TXN-001', controlNumber: '991412345678' },
-    { id: 'PAY-002', appId: 'APP-004', docType: 'Recommendation Letter', description: 'Document Processing Fee', amount: 10000, date: '2026-05-20', status: 'Paid', method: 'Bank Transfer', transactionId: 'TXN-002', controlNumber: '991487654321' },
-    { id: 'PAY-003', appId: 'APP-002', docType: 'Identity Confirmation Letter', description: 'Certificate Issuance Fee', amount: 25000, date: '2026-06-15', status: 'Unpaid', method: '', transactionId: '', controlNumber: '' },
-    { id: 'PAY-004', appId: 'APP-003', docType: 'Business Permit Support Letter', description: 'Business Permit Fee', amount: 30000, date: '2026-06-18', status: 'Unpaid', method: '', transactionId: '', controlNumber: '' },
-  ]);
+  // 🔑 NEW: Check if session was cleared recently
+  const wasSessionCleared = () => {
+    const cleared = localStorage.getItem('lams_session_cleared');
+    if (!cleared) return false;
+    const elapsed = Date.now() - parseInt(cleared);
+    return elapsed < 3000; // Within last 3 seconds
+  };
 
-  let documents = getStore('citizen_documents', [
-    { id: 'DOC-001', appId: 'APP-001', name: 'Residence Confirmation Letter', type: 'Official Letter', issueDate: '2026-06-10', status: 'Ready' },
-    { id: 'DOC-002', appId: 'APP-004', name: 'Recommendation Letter', type: 'Official Letter', issueDate: '2026-05-20', status: 'Ready' },
-  ]);
-
-  let profile = getStore('citizen_profile', {
-    name: 'Maria Joseph', email: 'maria.joseph@email.com', phone: '+255 765 432 109',
-    address: '45 Mtaa Street, Dar es Salaam', nationalId: 'TZ-1990-12345678',
-    photo: 'https://ui-avatars.com/api/?name=Maria+Joseph&background=0066cc&color=fff&size=120'
-  });
-
-  let notifications = getStore('citizen_notifications', [
-    { id: 1, message: 'Your Residence Letter has been approved!', time: '2 hours ago', read: false, icon: 'fa-check-circle', color: '#00b894' },
-    { id: 2, message: 'Payment of TZS 15,000 confirmed.', time: '5 hours ago', read: false, icon: 'fa-credit-card', color: '#0066cc' },
-    { id: 3, message: 'New message from Local Administrator.', time: '1 day ago', read: false, icon: 'fa-envelope', color: '#f59e0b' },
-  ]);
-
-  let chatHistory = getStore('citizen_chat_admin', [
-    { sender: 'admin', text: 'Hello Maria! How can I help you today?', time: '10:30 AM' },
-    { sender: 'citizen', text: 'I wanted to check the status of my residence letter application.', time: '10:32 AM' },
-    { sender: 'admin', text: 'Your application has been approved! You can download the document from your portal.', time: '10:35 AM' },
-    { sender: 'citizen', text: 'Thank you so much for the quick update!', time: '10:36 AM' },
-  ]);
-
-  let supportChatHistory = getStore('citizen_chat_support', [
-    { sender: 'support', text: 'Hello! I\'m the Support Assistant. How can I help you today?', time: '09:00 AM' },
-  ]);
-
-  let currentChatTab = 'admin';
-  let currentPaymentPage = 1;
-  let proPaymentData = null;
-  let proPaymentStep = 1;
-  const itemsPerPage = 5;
-
-  function saveAllData() {
-    setStore('citizen_applications', applications);
-    setStore('citizen_payments', payments);
-    setStore('citizen_documents', documents);
-    setStore('citizen_profile', profile);
-    setStore('citizen_notifications', notifications);
-    setStore('citizen_chat_admin', chatHistory);
-    setStore('citizen_chat_support', supportChatHistory);
-  }
-
-  // ==================== AVATAR HELPER ====================
-  function getAvatarHTML(photo, name) {
-    if (photo && photo.startsWith('http')) return `<img src="${photo}" alt="Avatar" class="table-avatar">`;
-    if (photo && photo.startsWith('data:')) return `<img src="${photo}" alt="Avatar" class="table-avatar">`;
-    const initials = (name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-    return `<div class="table-avatar-default">${initials}</div>`;
-  }
-
-  // ==================== ANNOUNCEMENT IMAGE HELPER ====================
-  function getAnnouncementImageHTML(image, title) {
-    if (image && (image.startsWith('http') || image.startsWith('data:') || image.startsWith('/uploads/'))) {
-      return `<img src="${image}" alt="${title}" class="announcement-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`;
+  // ==================== AUTH CHECK (FIXED) ====================
+  // 🔑 NEW: If session was cleared recently, redirect to login immediately
+  if (wasSessionCleared()) {
+    localStorage.removeItem('lams_session_cleared');
+    if (!isOnLoginPage()) {
+      window.location.href = 'login.html';
     }
-    return `<div class="announcement-img-placeholder"><i class="fas fa-bullhorn"></i></div>`;
+    return;
   }
 
-  function getAnnouncementDetailImageHTML(image, title) {
-    if (image && (image.startsWith('http') || image.startsWith('data:') || image.startsWith('/uploads/'))) {
-      return `<img src="${image}" alt="${title}" class="announcement-detail-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">`;
+  if (!window.API || !window.API.isAuthenticated()) {
+    if (!isOnLoginPage()) {
+      window.location.href = 'login.html';
     }
-    return `<div class="announcement-detail-placeholder"><i class="fas fa-bullhorn"></i></div>`;
+    return;
+  }
+  const session = window.API.getSession() || {};
+  if (session.role !== 'citizen') {
+    if (!isOnLoginPage()) {
+      window.location.href = 'login.html';
+    }
+    return;
+  }
+  let profileData = {};
+  const BASE_URL = 'http://localhost:5000';
+  const API_URL = BASE_URL + '/api';
+
+  // ==================== DOM REFS ====================
+  const body = document.body;
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebarLinks = document.querySelectorAll('.sidebar-link[data-page]');
+  const pageContents = document.querySelectorAll('.page-content');
+  const themeToggle = document.getElementById('themeToggle');
+  const notificationBtn = document.getElementById('notificationBtn');
+  const notificationDropdown = document.getElementById('notificationDropdown');
+  const notifBadge = document.getElementById('notifBadge');
+  const markAllReadBtn = document.getElementById('markAllRead');
+  const backToTopBtn = document.getElementById('backToTop');
+  const userDropdownBtn = document.getElementById('userDropdownBtn');
+  const userDropdownMenu = document.getElementById('userDropdownMenu');
+  const citizenSearch = document.getElementById('citizenSearch');
+  const toastContainer = document.getElementById('toastContainer');
+
+  // ==================== STATE ====================
+  let currentPage = 'dashboard';
+  let applications = [];
+  let payments = [];
+  let currentPaymentId = null;
+  let messagesLoaded = false;
+
+  // ==================== AUTH HEADER HELPER ====================
+  function getAuthHeaders() {
+    const token = window.API.getToken();
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
   }
 
-  // ==================== PDF RECEIPT GENERATOR ====================
-  function generatePDFReceipt(payment) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    doc.setFillColor(0, 102, 204);
-    doc.rect(0, 0, pageWidth, 35, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18); doc.setFont('helvetica', 'bold');
-    doc.text('LAMS - Local Administration', pageWidth / 2, 18, { align: 'center' });
-    doc.text('Management System', pageWidth / 2, 28, { align: 'center' });
-    doc.setTextColor(0, 102, 204); doc.setFontSize(16);
-    doc.text('OFFICIAL PAYMENT RECEIPT', pageWidth / 2, 45, { align: 'center' });
-    doc.setDrawColor(0, 102, 204); doc.line(15, 50, pageWidth - 15, 50);
-    doc.setTextColor(30, 41, 59); doc.setFontSize(10);
-    const leftX = 15, rightX = pageWidth / 2 + 5, lineHeight = 8;
-    let yPos = 60;
-    const addRow = (label, value, x, y) => { doc.setFont('helvetica', 'bold'); doc.text(label + ':', x, y); doc.setFont('helvetica', 'normal'); doc.text(value || 'N/A', x + 45, y); };
-    addRow('Receipt No', payment.id, leftX, yPos); addRow('Transaction ID', payment.transactionId || 'N/A', rightX, yPos); yPos += lineHeight;
-    addRow('Date', payment.date, leftX, yPos); addRow('Time', new Date().toLocaleTimeString(), rightX, yPos); yPos += lineHeight + 4;
-    doc.setFillColor(240, 248, 255); doc.rect(15, yPos, pageWidth - 30, 8, 'F'); doc.setFontSize(11); doc.text('APPLICANT DETAILS', leftX, yPos + 5.5); yPos += 12; doc.setFontSize(10);
-    addRow('Full Name', profile.name, leftX, yPos); addRow('National ID', profile.nationalId, rightX, yPos); yPos += lineHeight;
-    addRow('Email', profile.email, leftX, yPos); addRow('Phone', profile.phone, rightX, yPos); yPos += lineHeight;
-    addRow('Address', profile.address, leftX, yPos); yPos += lineHeight + 4;
-    doc.setFillColor(240, 248, 255); doc.rect(15, yPos, pageWidth - 30, 8, 'F'); doc.setFontSize(11); doc.text('PAYMENT DETAILS', leftX, yPos + 5.5); yPos += 12; doc.setFontSize(10);
-    addRow('Service', payment.docType, leftX, yPos); addRow('Description', payment.description, rightX, yPos); yPos += lineHeight;
-    addRow('Payment Method', payment.method, leftX, yPos); addRow('Control Number', payment.controlNumber || 'N/A', rightX, yPos); yPos += lineHeight;
-    doc.setFontSize(14); doc.setTextColor(0, 102, 204); doc.text('Amount Paid: TZS ' + payment.amount.toLocaleString(), pageWidth / 2, yPos + 10, { align: 'center' }); yPos += 20;
-    doc.setTextColor(0, 184, 148); doc.setFontSize(12); doc.text('STATUS: PAID', pageWidth / 2, yPos, { align: 'center' });
-    doc.setDrawColor(0, 102, 204); doc.line(15, yPos + 10, pageWidth - 15, yPos + 10);
-    doc.setTextColor(71, 85, 105); doc.setFontSize(8);
-    doc.text('This is an official receipt from LAMS.', pageWidth / 2, yPos + 18, { align: 'center' });
-    doc.text('Generated on: ' + new Date().toLocaleString(), pageWidth / 2, yPos + 24, { align: 'center' });
-    doc.save(`LAMS_Receipt_${payment.id}.pdf`);
+  // ==================== TOKEN-AWARE FETCH FOR FILES ====================
+  async function fetchWithAuth(url, options = {}) {
+    const headers = { ...getAuthHeaders(), ...(options.headers || {}) };
+    return fetch(url, { ...options, headers });
   }
-
-  // ==================== DOM REFERENCES ====================
-  const body = document.body, sidebar = document.getElementById('sidebar'), sidebarToggle = document.getElementById('sidebarToggle');
-  const sidebarLinks = document.querySelectorAll('.sidebar-link[data-page]'), pageContents = document.querySelectorAll('.page-content');
-  const themeToggle = document.getElementById('themeToggle'), languageToggle = document.getElementById('languageToggle'), langText = document.querySelector('.lang-text');
-  const notificationBtn = document.getElementById('notificationBtn'), notificationDropdown = document.getElementById('notificationDropdown'), notifBadge = document.getElementById('notifBadge'), markAllRead = document.getElementById('markAllRead');
-  const backToTopBtn = document.getElementById('backToTop'), userDropdownBtn = document.getElementById('userDropdownBtn'), userDropdownMenu = document.getElementById('userDropdownMenu'), citizenSearch = document.getElementById('citizenSearch');
 
   // ==================== TOAST ====================
   function showToast(type, message) {
-    const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     const icons = { success: 'fa-check-circle', error: 'fa-times-circle', info: 'fa-info-circle', warning: 'fa-exclamation-triangle' };
     toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> ${message}`;
-    container.appendChild(toast);
+    toastContainer.appendChild(toast);
     setTimeout(() => toast.remove(), 3500);
   }
-  window.showToast = showToast;
 
-  function addNotification(message, icon, color) {
-    notifications.unshift({ id: Date.now(), message, time: 'Just now', read: false, icon, color });
-    if (notifications.length > 20) notifications.pop();
-    saveAllData(); updateNotificationBadge(); renderNotifications();
-  }
-
-  // ==================== PAGE NAVIGATION ====================
-  function navigateToPage(pageName) {
-    sidebarLinks.forEach(link => { link.classList.remove('active'); if (link.getAttribute('data-page') === pageName) link.classList.add('active'); });
-    pageContents.forEach(page => { page.classList.remove('active'); if (page.id === `page-${pageName}`) page.classList.add('active'); });
-    document.querySelector('.page-content-wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (window.innerWidth <= 992) sidebar.classList.remove('active');
-    switch(pageName) { case 'dashboard': updateDashboard(); break; case 'applications': renderApplications(); break; case 'payments': renderPayments(); break; case 'messages': renderMessages(); break; case 'announcements': renderAnnouncements(); break; case 'documents': renderDocuments(); break; case 'profile': updateProfileDisplay(); break; }
-  }
-  sidebarLinks.forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); navigateToPage(link.getAttribute('data-page')); window.location.hash = link.getAttribute('data-page'); }); });
-  document.querySelectorAll('[data-page]').forEach(el => { if (!el.classList.contains('sidebar-link')) el.addEventListener('click', () => { const p = el.getAttribute('data-page'); if (p) navigateToPage(p); }); });
-  function handleHashChange() { const hash = window.location.hash.replace('#', ''); if (hash && document.getElementById(`page-${hash}`)) navigateToPage(hash); }
-  window.addEventListener('hashchange', handleHashChange); handleHashChange();
-
-  sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
-  document.addEventListener('click', (e) => { if (window.innerWidth <= 992 && !sidebar.contains(e.target) && e.target !== sidebarToggle && !sidebarToggle.contains(e.target)) sidebar.classList.remove('active'); });
-
+  // ==================== THEME ====================
   const savedTheme = localStorage.getItem('theme') || 'light';
   if (savedTheme === 'dark') { body.classList.add('dark-mode'); themeToggle.innerHTML = '<i class="fas fa-sun"></i>'; }
-  themeToggle.addEventListener('click', () => { body.classList.toggle('dark-mode'); const isDark = body.classList.contains('dark-mode'); themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>'; localStorage.setItem('theme', isDark ? 'dark' : 'light'); });
+  themeToggle.addEventListener('click', () => {
+    body.classList.toggle('dark-mode');
+    const isDark = body.classList.contains('dark-mode');
+    themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  });
 
-  let isEnglish = true;
-  languageToggle.addEventListener('click', () => { isEnglish = !isEnglish; langText.textContent = isEnglish ? 'EN' : 'SW'; showToast('info', isEnglish ? 'Language: English' : 'Lugha: Kiswahili'); });
+  // ==================== NAVIGATION ====================
+  function navigateToPage(pageName) {
+    currentPage = pageName;
+    sidebarLinks.forEach(l => l.classList.remove('active'));
+    const link = document.querySelector(`.sidebar-link[data-page="${pageName}"]`);
+    if (link) link.classList.add('active');
+    pageContents.forEach(p => p.classList.remove('active'));
+    const page = document.getElementById(`page-${pageName}`);
+    if (page) page.classList.add('active');
+    if (window.innerWidth <= 992) sidebar.classList.remove('active');
 
-  function updateClock() { const now = new Date(); const ce = document.getElementById('realTimeClock'), de = document.getElementById('realTimeDate'); if (ce) ce.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); if (de) de.textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
-  setInterval(updateClock, 1000); updateClock();
+    switch (pageName) {
+      case 'dashboard': loadDashboard(); break;
+      case 'applications': loadApplications(); break;
+      case 'payments': loadPayments(); break;
+      case 'messages': loadMessages(); break;
+      case 'announcements': loadAnnouncements(); break;
+      case 'documents': loadDocuments(); break;
+      case 'profile': loadProfile(); break;
+    }
+  }
 
-  function updateNotificationBadge() { const unread = notifications.filter(n => !n.read).length; notifBadge.textContent = unread; notifBadge.style.display = unread > 0 ? 'flex' : 'none'; }
-  function renderNotifications() { const list = document.getElementById('notifList'); if (notifications.length === 0) list.innerHTML = '<p class="no-notifications">No new notifications</p>'; else { list.innerHTML = notifications.map(n => `<div class="notif-item ${n.read ? '' : 'unread'}" data-id="${n.id}"><i class="fas ${n.icon}" style="color:${n.color};"></i><div><p>${n.message}</p><small>${n.time}</small></div></div>`).join(''); list.querySelectorAll('.notif-item').forEach(item => { item.addEventListener('click', function() { const id = parseInt(this.getAttribute('data-id')); notifications = notifications.map(n => n.id === id ? { ...n, read: true } : n); saveAllData(); renderNotifications(); }); }); } updateNotificationBadge(); }
-  notificationBtn.addEventListener('click', (e) => { e.stopPropagation(); notificationDropdown.classList.toggle('active'); userDropdownMenu.classList.remove('active'); });
-  document.addEventListener('click', (e) => { if (!notificationDropdown.contains(e.target) && e.target !== notificationBtn && !notificationBtn.contains(e.target)) notificationDropdown.classList.remove('active'); if (!userDropdownMenu.contains(e.target) && e.target !== userDropdownBtn && !userDropdownBtn.contains(e.target)) userDropdownMenu.classList.remove('active'); });
-  markAllRead.addEventListener('click', () => { notifications = notifications.map(n => ({ ...n, read: true })); saveAllData(); renderNotifications(); showToast('success', 'All notifications marked as read'); });
-  userDropdownBtn.addEventListener('click', (e) => { e.stopPropagation(); userDropdownMenu.classList.toggle('active'); notificationDropdown.classList.remove('active'); });
+  sidebarLinks.forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); navigateToPage(link.getAttribute('data-page')); }));
+  document.querySelectorAll('[data-page]').forEach(el => { if (!el.classList.contains('sidebar-link')) el.addEventListener('click', () => navigateToPage(el.getAttribute('data-page'))); });
+
+  sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
+
+  // ==================== DROPDOWNS ====================
+  notificationBtn?.addEventListener('click', (e) => { e.stopPropagation(); notificationDropdown?.classList.toggle('active'); userDropdownMenu?.classList.remove('active'); });
+  userDropdownBtn?.addEventListener('click', (e) => { e.stopPropagation(); userDropdownMenu?.classList.toggle('active'); notificationDropdown?.classList.remove('active'); });
+  document.addEventListener('click', () => {
+    notificationDropdown?.classList.remove('active');
+    userDropdownMenu?.classList.remove('active');
+  });
 
   // ==================== LOGOUT ====================
-  const logoutModalOverlay = document.getElementById('logoutModalOverlay'), logoutModal = document.getElementById('logoutModal');
-  function openLogoutModal() { logoutModalOverlay.classList.add('active'); logoutModal.classList.add('active'); }
-  function closeLogoutModal() { logoutModalOverlay.classList.remove('active'); logoutModal.classList.remove('active'); }
-  window.closeLogoutModal = closeLogoutModal;
-  window.confirmLogout = function() { closeLogoutModal(); showToast('info', 'Logging out...'); setTimeout(() => { window.location.href = 'login.html'; }, 1000); };
-  document.getElementById('logoutSidebarBtn').addEventListener('click', (e) => { e.preventDefault(); openLogoutModal(); });
-  document.getElementById('logoutDropdownBtn').addEventListener('click', (e) => { e.preventDefault(); openLogoutModal(); });
-  document.getElementById('logoutCancelBtn').addEventListener('click', closeLogoutModal);
-  document.getElementById('logoutConfirmBtn').addEventListener('click', window.confirmLogout);
-  logoutModalOverlay.addEventListener('click', function(e) { if (e.target === logoutModalOverlay) closeLogoutModal(); });
-  logoutModal.addEventListener('click', function(e) { e.stopPropagation(); });
+  document.getElementById('logoutSidebarBtn')?.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('logoutModalOverlay')?.classList.add('active'); });
+  document.getElementById('logoutDropdownBtn')?.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('logoutModalOverlay')?.classList.add('active'); });
+  document.getElementById('logoutCancelBtn')?.addEventListener('click', () => document.getElementById('logoutModalOverlay')?.classList.remove('active'));
+  document.getElementById('logoutConfirmBtn')?.addEventListener('click', async () => {
+    try { await window.API.auth.logout(); } catch (e) {}
+    window.location.href = 'login.html';
+  });
 
-  window.addEventListener('scroll', () => { if (window.scrollY > 400) backToTopBtn.classList.add('visible'); else backToTopBtn.classList.remove('visible'); });
-  backToTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  // ==================== MODAL CLOSERS ====================
+  document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); }));
+
+  // ==================== BACK TO TOP ====================
+  window.addEventListener('scroll', () => backToTopBtn?.classList.toggle('visible', window.scrollY > 400));
+  backToTopBtn?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // ==================== UPDATE SIDEBAR ====================
+  function updateUI() {
+    const name = profileData.full_name || session.full_name || 'Citizen';
+    document.getElementById('sidebarCitizenName').textContent = name;
+    document.getElementById('headerUserName').textContent = name.split(' ')[0];
+    document.getElementById('dashboardCitizenName').textContent = name;
+    const photo = profileData.profile_photo || profileData.citizen_photo;
+    if (photo) {
+      const imgUrl = photo.startsWith('http') || photo.startsWith('/') ? photo : BASE_URL + '/' + photo;
+      document.getElementById('sidebarAvatarImg').src = imgUrl;
+      document.getElementById('profileAvatarImg').src = imgUrl;
+    }
+  }
+
+  // ==================== REAL-TIME CLOCK ====================
+  function updateClock() {
+    const now = new Date();
+    const ce = document.getElementById('realTimeClock');
+    const de = document.getElementById('realTimeDate');
+    if (ce) ce.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (de) de.textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
 
   // ==================== DASHBOARD ====================
-  function updateDashboard() {
-    const pendingApps = applications.filter(a => a.status === 'Pending' || a.status === 'Processing').length;
-    const approvedApps = applications.filter(a => a.status === 'Approved').length;
-    const paidPayments = payments.filter(p => p.status === 'Paid').length;
-    const unreadNotifs = notifications.filter(n => !n.read).length;
-    document.getElementById('dashboardCitizenName').textContent = profile.name;
-    document.getElementById('dashPending').textContent = pendingApps;
-    document.getElementById('dashCompleted').textContent = approvedApps;
-    document.getElementById('statTotalApps').setAttribute('data-target', applications.length);
-    document.getElementById('statPending').setAttribute('data-target', pendingApps);
-    document.getElementById('statApproved').setAttribute('data-target', approvedApps);
-    document.getElementById('statPayments').setAttribute('data-target', paidPayments);
-    document.getElementById('statNotifs').setAttribute('data-target', unreadNotifs);
-    const activityList = document.getElementById('dashboardActivityList');
-    const activities = [];
-    applications.slice(0, 3).forEach(app => activities.push({ icon: 'fa-file-alt', color: app.status === 'Approved' ? '#00b894' : '#f59e0b', text: `${app.docType} - ${app.status}`, time: app.date }));
-    payments.filter(p => p.status === 'Paid').slice(0, 2).forEach(pay => activities.push({ icon: 'fa-credit-card', color: '#0066cc', text: `Payment of TZS ${pay.amount.toLocaleString()}`, time: pay.date }));
-    activityList.innerHTML = activities.map(a => `<div class="activity-item"><i class="fas ${a.icon}" style="color:${a.color};"></i><div><p>${a.text}</p><small>${a.time}</small></div></div>`).join('') || '<p style="color:var(--text-light);">No recent activity</p>';
-    updateSidebarBadges();
+  async function loadDashboard() {
+    try {
+      const res = await window.API.citizen.getDashboard();
+      if (res.success) {
+        const d = res.data || res;
+        const s = d.summary || d;
+        document.getElementById('dashPending').textContent = s.pending_applications || 0;
+        document.getElementById('dashCompleted').textContent = s.approved_applications || 0;
+        document.getElementById('dashUnread').textContent = d.unread_messages || 0;
+
+        document.getElementById('dashboardStatsGrid').innerHTML = `
+          <div class="stat-card"><div class="stat-icon"><i class="fas fa-file-alt"></i></div><div class="stat-info"><span class="stat-number">${s.total_applications || 0}</span><span class="stat-label">Total Applications</span></div></div>
+          <div class="stat-card"><div class="stat-icon" style="color:#f59e0b;"><i class="fas fa-clock"></i></div><div class="stat-info"><span class="stat-number">${s.pending_applications || 0}</span><span class="stat-label">Pending</span></div></div>
+          <div class="stat-card"><div class="stat-icon" style="color:#00b894;"><i class="fas fa-check-circle"></i></div><div class="stat-info"><span class="stat-number">${s.approved_applications || 0}</span><span class="stat-label">Approved</span></div></div>
+          <div class="stat-card"><div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div><div class="stat-info"><span class="stat-number">${s.total_payments_made || 0}</span><span class="stat-label">Payments Made</span></div></div>
+          <div class="stat-card"><div class="stat-icon" style="color:#f59e0b;"><i class="fas fa-envelope"></i></div><div class="stat-info"><span class="stat-number">${d.unread_messages || 0}</span><span class="stat-label">Unread Messages</span></div></div>
+          <div class="stat-card"><div class="stat-icon" style="color:#8b5cf6;"><i class="fas fa-bell"></i></div><div class="stat-info"><span class="stat-number">${s.total_notifications || 0}</span><span class="stat-label">Notifications</span></div></div>
+        `;
+
+        const activities = d.recent_activities || [];
+        document.getElementById('dashboardActivityList').innerHTML = activities.length > 0
+          ? activities.slice(0, 8).map(a => `<div class="activity-item"><i class="fas fa-${a.activity_type === 'payment' ? 'credit-card' : 'file-alt'}" style="color:var(--primary);"></i><div><p>${a.activity || a.description}</p><small>${a.created_at ? new Date(a.created_at).toLocaleString() : ''}</small></div></div>`).join('')
+          : '<p style="color:var(--text-light);">No recent activity</p>';
+      }
+    } catch (e) { console.error('Dashboard error:', e); }
   }
-  function updateSidebarBadges() { const pa = applications.filter(a => a.status === 'Pending' || a.status === 'Processing').length, up = payments.filter(p => p.status === 'Unpaid').length; document.getElementById('appBadge').textContent = pa; document.getElementById('appBadge').style.display = pa > 0 ? '' : 'none'; document.getElementById('paymentBadge').textContent = up; document.getElementById('paymentBadge').style.display = up > 0 ? '' : 'none'; }
 
   // ==================== APPLICATIONS ====================
-  function renderApplications() {
-    const tbody = document.getElementById('appTableBody');
-    tbody.innerHTML = applications.map(app => {
-      const relatedPayment = payments.find(p => p.appId === app.id && p.status === 'Unpaid');
-      const paidPayment = payments.find(p => p.appId === app.id && p.status === 'Paid');
-      return `
+  async function loadApplications() {
+    try {
+      const res = await window.API.citizen.getApplications();
+      applications = res.success ? (res.data || []) : [];
+      const tbody = document.getElementById('appTableBody');
+      if (applications.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;">No applications. Click "New" to submit.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = applications.map(a => {
+        const payStatus = (a.payment_status || a.pay_status || '').toLowerCase();
+        const isUnpaid = payStatus === 'unpaid' || payStatus === 'pending';
+        const isPaid = payStatus === 'paid';
+        return `
         <tr>
-          <td>${getAvatarHTML(profile.photo, profile.name)}</td>
-          <td><strong>#${app.id}</strong></td>
-          <td>${app.docType}</td>
-          <td>${app.date}</td>
-          <td><span class="status-badge status-${app.status.toLowerCase()}">${app.status}</span></td>
+          <td><div class="table-avatar-default">${(a.citizen_name || profileData.full_name || '?').charAt(0).toUpperCase()}</div></td>
+          <td><strong>#${a.id || 'N/A'}</strong></td>
+          <td>${a.document_type || 'N/A'}</td>
+          <td>${a.date || (a.created_at ? a.created_at.split('T')[0] : 'N/A')}</td>
+          <td><span class="status-badge status-${(a.status || 'pending').toLowerCase()}">${a.status || 'Pending'}</span></td>
           <td>
-            <button class="btn-sm view-app-btn" data-id="${app.id}" title="View Details"><i class="fas fa-eye"></i> View</button>
-            ${relatedPayment ? `<button class="btn-sm btn-primary pay-now-btn" data-id="${app.id}" title="Pay Now"><i class="fas fa-credit-card"></i> Pay Now</button>` : ''}
-            ${paidPayment ? `<span class="status-badge status-paid" style="margin-left:4px;"><i class="fas fa-check"></i> Paid</span>` : (relatedPayment ? '' : '<span class="status-badge status-paid" style="margin-left:4px;"><i class="fas fa-check"></i> Paid</span>')}
+            <button class="btn-sm view-app-btn" data-id="${a.id}"><i class="fas fa-eye"></i> View</button>
+            ${isUnpaid ? `<button class="btn-sm btn-primary pay-app-btn" data-id="${a.id}"><i class="fas fa-credit-card"></i> Pay Now</button>` : ''}
+            ${isPaid ? `<span class="status-badge status-paid" style="margin-left:4px;"><i class="fas fa-check"></i> Paid</span>` : ''}
           </td>
-        </tr>
-      `;
-    }).join('');
-    tbody.querySelectorAll('.view-app-btn').forEach(btn => { btn.addEventListener('click', function() { viewApplication(this.getAttribute('data-id')); }); });
-    tbody.querySelectorAll('.pay-now-btn').forEach(btn => { btn.addEventListener('click', function() { openProfessionalPayment(this.getAttribute('data-id')); }); });
+        </tr>`;
+      }).join('');
+      tbody.querySelectorAll('.view-app-btn').forEach(b => b.addEventListener('click', () => viewApplication(b.dataset.id)));
+      tbody.querySelectorAll('.pay-app-btn').forEach(b => b.addEventListener('click', () => openPaymentModalForApp(b.dataset.id)));
+    } catch (e) { console.error('Apps error:', e); }
   }
 
-  function viewApplication(appId) {
-    const app = applications.find(a => a.id === appId); if (!app) return;
-    const payment = payments.find(p => p.appId === appId);
+  function viewApplication(id) {
+    const app = applications.find(a => a.id == id);
+    if (!app) return;
     const content = document.getElementById('appDetailContent');
-    content.innerHTML = `<button class="modal-close modal-close-btn" id="appDetailCloseBtn">&times;</button><h2>Application Details</h2><p><strong>App ID:</strong> #${app.id}</p><p><strong>Document:</strong> ${app.docType}</p><p><strong>Date:</strong> ${app.date}</p><p><strong>Status:</strong> <span class="status-badge status-${app.status.toLowerCase()}">${app.status}</span></p><p><strong>Reason:</strong> ${app.reason || 'N/A'}</p><p><strong>Notes:</strong> ${app.notes || 'N/A'}</p>${payment ? `<p><strong>Payment:</strong> <span class="status-badge status-${payment.status === 'Paid' ? 'paid' : 'unpaid'}">${payment.status}</span> - TZS ${payment.amount.toLocaleString()}</p>` : ''}${payment && payment.status === 'Unpaid' ? `<button class="btn btn-primary" id="payFromDetailBtn"><i class="fas fa-credit-card"></i> Pay Now</button>` : ''}`;
-    const overlay = document.getElementById('appDetailModalOverlay'), modal = document.getElementById('appDetailModal');
-    overlay.classList.add('active'); modal.classList.add('active');
-    document.getElementById('appDetailCloseBtn').addEventListener('click', closeAppDetailModal);
-    const payBtn = document.getElementById('payFromDetailBtn');
-    if (payBtn) payBtn.addEventListener('click', () => { closeAppDetailModal(); openProfessionalPayment(appId); });
+    const payStatus = (app.payment_status || app.pay_status || '').toLowerCase();
+    content.innerHTML = `
+      <button class="modal-close modal-close-btn" onclick="document.getElementById('appDetailModalOverlay').classList.remove('active')">&times;</button>
+      <h2>Application #${app.id}</h2>
+      <p><strong>Type:</strong> ${app.document_type || 'N/A'}</p>
+      <p><strong>Status:</strong> <span class="status-badge status-${(app.status || 'pending').toLowerCase()}">${app.status || 'Pending'}</span></p>
+      <p><strong>Date:</strong> ${app.date || (app.created_at ? app.created_at.split('T')[0] : 'N/A')}</p>
+      <p><strong>Payment:</strong> <span class="status-badge status-${payStatus || 'unpaid'}">${app.payment_status || app.pay_status || 'Unpaid'}</span></p>
+      ${payStatus === 'unpaid' || payStatus === 'pending' ? `<button class="btn btn-primary btn-full" id="payFromDetailBtn"><i class="fas fa-credit-card"></i> Pay Now</button>` : ''}
+    `;
+    document.getElementById('appDetailModalOverlay').classList.add('active');
+    setTimeout(() => {
+      const payBtn = document.getElementById('payFromDetailBtn');
+      if (payBtn) payBtn.addEventListener('click', () => { document.getElementById('appDetailModalOverlay').classList.remove('active'); openPaymentModalForApp(id); });
+    }, 100);
   }
-  function closeAppDetailModal() { document.getElementById('appDetailModalOverlay').classList.remove('active'); document.getElementById('appDetailModal').classList.remove('active'); }
-  document.getElementById('appDetailModalOverlay').addEventListener('click', function(e) { if (e.target === this) closeAppDetailModal(); });
 
-  // ==================== NEW APPLICATION MODAL ====================
-  const appModalOverlay = document.getElementById('appModalOverlay'), appModal = document.getElementById('appModal'), appModalContent = document.getElementById('appModalContent');
-  function openAppModal() { appModalOverlay.classList.add('active'); appModal.classList.add('active'); }
-  function closeAppModal() { appModalOverlay.classList.remove('active'); appModal.classList.remove('active'); document.getElementById('applicationForm').reset(); }
-  document.getElementById('newApplicationBtn').addEventListener('click', openAppModal);
-  document.getElementById('appModalCloseBtn').addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); closeAppModal(); });
-  document.getElementById('appModalCancelBtn').addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); closeAppModal(); });
-  appModalOverlay.addEventListener('click', function(e) { if (e.target === appModalOverlay) closeAppModal(); });
-  appModalContent.addEventListener('click', function(e) { e.stopPropagation(); });
-  document.getElementById('applicationForm').addEventListener('submit', function(e) {
-    e.preventDefault(); const docType = document.getElementById('appDocType').value, reason = document.getElementById('appReason').value, notes = document.getElementById('appNotes').value;
-    if (!docType) { showToast('error', 'Please select a document type'); return; }
-    const appId = 'APP-' + String(applications.length + 1).padStart(3, '0'), today = new Date().toISOString().split('T')[0];
-    applications.push({ id: appId, docType, date: today, status: 'Pending', reason, notes });
-    const amounts = { 'Residence Confirmation Letter': 15000, 'Identity Confirmation Letter': 25000, 'Business Permit Support Letter': 30000, 'Recommendation Letter': 10000, 'Custom Request': 20000 };
-    const payId = 'PAY-' + String(payments.length + 1).padStart(3, '0');
-    payments.push({ id: payId, appId, docType, description: 'Document Processing Fee', amount: amounts[docType] || 20000, date: today, status: 'Unpaid', method: '', transactionId: '', controlNumber: '' });
-    saveAllData(); addNotification('New application: ' + docType, 'fa-file-alt', '#f59e0b'); showToast('success', 'Application submitted!'); closeAppModal(); updateDashboard(); renderApplications(); renderPayments(); updateSidebarBadges();
+  document.getElementById('newApplicationBtn')?.addEventListener('click', () => document.getElementById('appModalOverlay')?.classList.add('active'));
+  document.getElementById('appModalCloseBtn')?.addEventListener('click', () => document.getElementById('appModalOverlay')?.classList.remove('active'));
+  document.getElementById('appModalCancelBtn')?.addEventListener('click', () => document.getElementById('appModalOverlay')?.classList.remove('active'));
+
+  document.getElementById('applicationForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const docType = document.getElementById('appDocType').value;
+    if (!docType) return showToast('error', 'Select a document type');
+    try {
+      const res = await window.API.citizen.createApplication({
+        document_type: docType,
+        reason: document.getElementById('appReason').value,
+        additional_notes: document.getElementById('appNotes').value
+      });
+      if (res.success) {
+        showToast('success', 'Application submitted!');
+        document.getElementById('appModalOverlay').classList.remove('active');
+        loadApplications();
+        loadPayments();
+      } else showToast('error', res.message || 'Failed');
+    } catch (err) { showToast('error', 'Network error'); }
   });
-  document.getElementById('appStatusFilter').addEventListener('change', function(e) { const f = e.target.value; document.querySelectorAll('#appTableBody tr').forEach(row => { const b = row.querySelector('.status-badge'); row.style.display = (f === 'all' || (b && b.textContent.trim() === f)) ? '' : 'none'; }); });
-  document.getElementById('appSearchInput').addEventListener('input', function(e) { const s = e.target.value.toLowerCase(); document.querySelectorAll('#appTableBody tr').forEach(row => { row.style.display = row.textContent.toLowerCase().includes(s) ? '' : 'none'; }); });
 
-  // ==================== PROFESSIONAL PAYMENT FLOW ====================
-  function openProfessionalPayment(appId) {
-    const payment = payments.find(p => p.appId === appId && p.status === 'Unpaid');
-    if (!payment) { showToast('info', 'No unpaid payment found for this application'); return; }
-    proPaymentData = { appId, payment }; proPaymentStep = 1;
-    document.getElementById('proPaymentModalOverlay').classList.add('active');
-    document.getElementById('proPaymentModal').classList.add('active');
-    renderProPaymentStep();
-  }
-  function closeProPayment() { document.getElementById('proPaymentModalOverlay').classList.remove('active'); document.getElementById('proPaymentModal').classList.remove('active'); proPaymentData = null; proPaymentStep = 1; }
-  document.getElementById('proPaymentCloseBtn').addEventListener('click', closeProPayment);
-  document.getElementById('proPaymentModalOverlay').addEventListener('click', function(e) { if (e.target === this) closeProPayment(); });
-
-  function renderProPaymentStep() {
-    const content = document.getElementById('proPaymentStepContent');
-    const navBtns = document.getElementById('paymentNavButtons');
-    document.querySelectorAll('#paymentSteps .step').forEach(s => { s.classList.remove('active', 'completed'); const stepNum = parseInt(s.getAttribute('data-step')); if (stepNum < proPaymentStep) s.classList.add('completed'); if (stepNum === proPaymentStep) s.classList.add('active'); });
-
-    switch(proPaymentStep) {
-      case 1:
-        content.innerHTML = `<h3>Select Payment Method</h3>
-          <div class="payment-method-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px;">
-            <button class="payment-method-card" data-method="mobile" onclick="selectProPaymentMethod('mobile')"><i class="fas fa-mobile-alt" style="font-size:2rem;color:var(--primary);display:block;margin-bottom:8px;"></i>Mobile Money</button>
-            <button class="payment-method-card" data-method="visa" onclick="selectProPaymentMethod('visa')"><i class="fab fa-cc-visa" style="font-size:2rem;color:#1a1f71;display:block;margin-bottom:8px;"></i>Visa Card</button>
-            <button class="payment-method-card" data-method="mastercard" onclick="selectProPaymentMethod('mastercard')"><i class="fab fa-cc-mastercard" style="font-size:2rem;color:#eb001b;display:block;margin-bottom:8px;"></i>MasterCard</button>
-            <button class="payment-method-card" data-method="bank" onclick="selectProPaymentMethod('bank')"><i class="fas fa-university" style="font-size:2rem;color:#475569;display:block;margin-bottom:8px;"></i>Bank Transfer</button>
-          </div>`;
-        navBtns.innerHTML = '';
-        break;
-      case 2:
-        const methodLabels = { mobile: 'Mobile Money', visa: 'Visa Card', mastercard: 'MasterCard', bank: 'Bank Transfer' };
-        let detailsHTML = `<h3>${methodLabels[proPaymentData.method]} Details</h3>`;
-        if (proPaymentData.method === 'mobile') {
-          detailsHTML += `<div class="form-group"><label>Mobile Number *</label><input type="text" id="mobileNumber" placeholder="e.g. 255 7XX XXX XXX"></div>
-            <div class="form-group"><label>Network Provider *</label><select id="networkProvider"><option value="">Select Network</option><option>M-Pesa</option><option>Airtel Money</option><option>Tigo Pesa</option><option>HaloPesa</option></select></div>`;
-        } else if (proPaymentData.method === 'visa' || proPaymentData.method === 'mastercard') {
-          detailsHTML += `<div class="form-group"><label>Card Holder Name *</label><input type="text" id="cardHolder" placeholder="As shown on card"></div>
-            <div class="form-group"><label>Card Number *</label><input type="text" id="cardNumber" placeholder="1234 5678 9012 3456"></div>
-            <div style="display:flex;gap:12px;"><div class="form-group" style="flex:1;"><label>Expiry Date *</label><input type="text" id="cardExpiry" placeholder="MM/YY"></div><div class="form-group" style="flex:1;"><label>CVV *</label><input type="text" id="cardCVV" placeholder="123"></div></div>`;
-        } else {
-          detailsHTML += `<div class="form-group"><label>Bank Name *</label><select id="bankName"><option value="">Select Bank</option><option>CRDB Bank</option><option>NMB Bank</option><option>NBC Bank</option><option>Other</option></select></div>
-            <div class="form-group"><label>Account Number *</label><input type="text" id="bankAccount" placeholder="Enter account number"></div>`;
-        }
-        content.innerHTML = detailsHTML;
-        navBtns.innerHTML = `<button class="btn btn-outline" onclick="proPaymentStep=1;renderProPaymentStep();">Back</button><button class="btn btn-primary" onclick="goToSecurityStep()">Continue</button>`;
-        break;
-      case 3:
-        content.innerHTML = `<h3><i class="fas fa-shield-alt"></i> Security Verification</h3><p style="color:var(--text-light);margin-bottom:15px;">Enter your payment PIN to authorize this transaction</p>
-          <div class="form-group"><label>Payment PIN *</label><input type="password" id="paymentPin" placeholder="Enter your 4-6 digit PIN" maxlength="6" style="font-size:1.2rem;letter-spacing:5px;text-align:center;"></div>
-          <p style="font-size:0.8rem;color:var(--text-light);"><i class="fas fa-lock"></i> Your PIN is encrypted and secure</p>`;
-        navBtns.innerHTML = `<button class="btn btn-outline" onclick="proPaymentStep=2;renderProPaymentStep();">Back</button><button class="btn btn-primary" onclick="goToReviewStep()">Verify & Continue</button>`;
-        break;
-      case 4:
-        content.innerHTML = `<h3>Review Payment</h3>
-          <div class="payment-review-card">
-            <div class="review-row"><span class="review-label">Application ID</span><span class="review-value">#${proPaymentData.appId}</span></div>
-            <div class="review-row"><span class="review-label">Document Type</span><span class="review-value">${proPaymentData.payment.docType}</span></div>
-            <div class="review-row"><span class="review-label">Amount</span><span class="review-value" style="color:var(--primary);font-weight:700;">TZS ${proPaymentData.payment.amount.toLocaleString()}</span></div>
-            <div class="review-row"><span class="review-label">Payment Method</span><span class="review-value">${methodLabels[proPaymentData.method] || 'N/A'}</span></div>
-            <div class="review-row"><span class="review-label">Date</span><span class="review-value">${new Date().toLocaleDateString()}</span></div>
-          </div>`;
-        navBtns.innerHTML = `<button class="btn btn-outline" onclick="proPaymentStep=3;renderProPaymentStep();">Back</button><button class="btn btn-primary" onclick="confirmProPayment()"><i class="fas fa-lock"></i> Confirm Payment</button>`;
-        break;
-    }
-  }
-
-  window.selectProPaymentMethod = function(method) { proPaymentData.method = method; proPaymentStep = 2; renderProPaymentStep(); };
-  window.goToSecurityStep = function() { proPaymentStep = 3; renderProPaymentStep(); };
-  window.goToReviewStep = function() { proPaymentStep = 4; renderProPaymentStep(); };
-  window.confirmProPayment = function() {
-    const payment = proPaymentData.payment;
-    payment.status = 'Paid';
-    payment.method = { mobile: 'Mobile Money', visa: 'Visa Card', mastercard: 'MasterCard', bank: 'Bank Transfer' }[proPaymentData.method] || 'Online Payment';
-    payment.transactionId = 'TXN-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    payment.controlNumber = '9914' + Math.random().toString().substr(2, 8);
-    const app = applications.find(a => a.id === proPaymentData.appId);
-    if (app) { app.status = 'Approved'; if (!documents.find(d => d.appId === proPaymentData.appId)) { documents.push({ id: 'DOC-' + String(documents.length + 1).padStart(3, '0'), appId: proPaymentData.appId, name: app.docType, type: 'Official Letter', issueDate: new Date().toISOString().split('T')[0], status: 'Ready' }); } }
-    saveAllData(); closeProPayment(); document.getElementById('successMessageText').textContent = 'Your payment of TZS ' + payment.amount.toLocaleString() + ' has been processed. Your document request is now being processed.'; document.getElementById('successModalOverlay').classList.add('active'); document.getElementById('successModal').classList.add('active');
-    addNotification('Payment of TZS ' + payment.amount.toLocaleString() + ' confirmed', 'fa-credit-card', '#0066cc');
-    updateDashboard(); renderApplications(); renderPayments(); renderDocuments(); updateSidebarBadges();
-  };
-  window.closeSuccessModal = function() { document.getElementById('successModalOverlay').classList.remove('active'); document.getElementById('successModal').classList.remove('active'); };
-
-  document.addEventListener('click', function(e) {
-    if (e.target.closest('.payment-method-card')) {
-      document.querySelectorAll('.payment-method-card').forEach(c => { c.style.border = '2px solid var(--border)'; c.style.background = 'var(--bg)'; });
-      const card = e.target.closest('.payment-method-card');
-      card.style.border = '2px solid var(--primary)';
-      card.style.background = 'rgba(0,102,204,0.05)';
-    }
+  document.getElementById('appStatusFilter')?.addEventListener('change', function() {
+    const f = this.value.toLowerCase();
+    document.querySelectorAll('#appTableBody tr').forEach(r => {
+      const b = r.querySelector('.status-badge');
+      r.style.display = (f === 'all' || (b && b.textContent.trim().toLowerCase() === f)) ? '' : 'none';
+    });
   });
 
   // ==================== PAYMENTS ====================
-  function renderPayments(page = 1) {
-    currentPaymentPage = page;
-    const tbody = document.getElementById('paymentTableBody');
-    const startIdx = (page - 1) * itemsPerPage;
-    const paginated = payments.slice(startIdx, startIdx + itemsPerPage);
-    tbody.innerHTML = paginated.map(p => `
-      <tr>
-        <td>#${p.id}</td><td>${p.docType}</td><td>${p.description}</td>
-        <td>TZS ${p.amount.toLocaleString()}</td><td>${p.date}</td>
-        <td><span class="status-badge ${p.status === 'Paid' ? 'status-paid' : 'status-unpaid'}">${p.status}</span></td>
-        <td>${p.status === 'Unpaid' ? `<button class="btn-sm btn-primary pay-hero-btn" data-id="${p.appId}"><i class="fas fa-credit-card"></i> Pay Now</button>` : `<button class="btn-sm receipt-btn" data-id="${p.id}"><i class="fas fa-download"></i> Receipt</button>`}</td>
-      </tr>
-    `).join('');
-    tbody.querySelectorAll('.pay-hero-btn').forEach(btn => { btn.addEventListener('click', function() { openProfessionalPayment(this.getAttribute('data-id')); }); });
-    tbody.querySelectorAll('.receipt-btn').forEach(btn => { btn.addEventListener('click', function() { const p = payments.find(p => p.id === this.getAttribute('data-id')); if (p) { generatePDFReceipt(p); showToast('success', 'Receipt downloaded!'); } }); });
+  async function loadPayments() {
+    try {
+      const res = await window.API.citizen.getPayments();
+      payments = res.success ? (res.data || []) : [];
+      const tbody = document.getElementById('paymentTableBody');
+      if (payments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No payments found.</td></tr>';
+      } else {
+        tbody.innerHTML = payments.map(p => {
+          const status = (p.status || p.payment_status || 'unpaid').toLowerCase();
+          return `
+          <tr>
+            <td><strong>#${p.payment_id || p.id || 'N/A'}</strong></td>
+            <td>${p.document_type || 'N/A'}</td>
+            <td>TZS ${parseInt(p.amount || 0).toLocaleString()}</td>
+            <td>${p.date || (p.created_at ? p.created_at.split('T')[0] : 'N/A')}</td>
+            <td><span class="status-badge status-${status}">${p.status || p.payment_status || 'Unpaid'}</span></td>
+            <td>
+              ${status === 'unpaid' || status === 'pending' ? `<button class="btn-sm btn-primary pay-now-btn" data-id="${p.id}"><i class="fas fa-credit-card"></i> Pay Now</button>` : `<button class="btn-sm receipt-btn" data-id="${p.id}"><i class="fas fa-download"></i> Receipt</button>`}
+            </td>
+          </tr>`;
+        }).join('');
+      }
+      tbody.querySelectorAll('.pay-now-btn').forEach(b => b.addEventListener('click', () => openPaymentModal(b.dataset.id)));
+      tbody.querySelectorAll('.receipt-btn').forEach(b => b.addEventListener('click', () => downloadReceipt(b.dataset.id)));
 
-    const historyBody = document.getElementById('paymentHistoryBody');
-    const paidPayments = payments.filter(p => p.status === 'Paid');
-    historyBody.innerHTML = paidPayments.map(p => `<tr><td>#${p.id}</td><td>${p.docType}</td><td>TZS ${p.amount.toLocaleString()}</td><td>${p.date}</td><td>${p.method || 'N/A'}</td><td><span class="status-badge status-paid">Paid</span></td></tr>`).join('') || '<tr><td colspan="6" style="text-align:center;">No payment history</td></tr>';
+      // History
+      const historyBody = document.getElementById('paymentHistoryBody');
+      const paid = payments.filter(p => (p.status || p.payment_status || '').toLowerCase() === 'paid');
+      historyBody.innerHTML = paid.length > 0
+        ? paid.map(p => `<tr><td>#${p.payment_id || p.id}</td><td>${p.document_type || 'N/A'}</td><td>TZS ${parseInt(p.amount||0).toLocaleString()}</td><td>${p.date||''}</td><td>${p.method || p.payment_method || 'N/A'}</td><td><span class="status-badge status-paid">Paid</span></td></tr>`).join('')
+        : '<tr><td colspan="6" style="text-align:center;">No history</td></tr>';
 
-    const totalPages = Math.ceil(payments.length / itemsPerPage);
-    const pagDiv = document.getElementById('paymentPagination');
-    if (totalPages > 1) { pagDiv.innerHTML = `<button ${page===1?'disabled':''} class="pag-btn" data-page="${page-1}">Previous</button>${Array.from({length:totalPages},(_,i)=>`<button class="${page===i+1?'active':''} pag-btn" data-page="${i+1}">${i+1}</button>`).join('')}<button ${page===totalPages?'disabled':''} class="pag-btn" data-page="${page+1}">Next</button>`; pagDiv.querySelectorAll('.pag-btn').forEach(btn=>{btn.addEventListener('click',function(){renderPayments(parseInt(this.getAttribute('data-page')));});}); } else { pagDiv.innerHTML = ''; }
-    updateOutstandingBalance();
+      // Outstanding
+      const unpaid = payments.filter(p => (p.status || p.payment_status || '').toLowerCase() === 'unpaid');
+      const total = unpaid.reduce((s, p) => s + parseInt(p.amount || 0), 0);
+      const card = document.getElementById('outstandingBalanceCard');
+      if (total > 0) { card.style.display = 'flex'; document.getElementById('outstandingAmount').textContent = 'TZS ' + total.toLocaleString(); }
+      else card.style.display = 'none';
+    } catch (e) { console.error('Payments error:', e); }
   }
 
-  function updateOutstandingBalance() {
-    const unpaidTotal = payments.filter(p => p.status === 'Unpaid').reduce((sum, p) => sum + p.amount, 0);
-    const hero = document.getElementById('outstandingBalanceHero');
-    if (unpaidTotal > 0) { hero.style.display = 'block'; document.getElementById('outstandingBalanceAmount').textContent = 'TZS ' + unpaidTotal.toLocaleString(); }
-    else { hero.style.display = 'none'; }
+  function openPaymentModalForApp(appId) {
+    const payment = payments.find(p => p.id == appId || p.document_request_id == appId);
+    if (payment) openPaymentModal(payment.id);
+    else showToast('info', 'No payment found. Submit an application first.');
   }
 
-  document.getElementById('payOutstandingHeroBtn').addEventListener('click', function() {
-    const firstUnpaid = payments.find(p => p.status === 'Unpaid');
-    if (firstUnpaid) openProfessionalPayment(firstUnpaid.appId);
-    else showToast('info', 'No unpaid payments found');
+  function openPaymentModal(id) {
+    currentPaymentId = id;
+    const payment = payments.find(p => p.id == id);
+    if (!payment) return showToast('error', 'Payment not found');
+    document.getElementById('paymentDetails').innerHTML = `
+      <p><strong>Payment ID:</strong> #${payment.payment_id || payment.id}</p>
+      <p><strong>Document:</strong> ${payment.document_type || 'N/A'}</p>
+      <p><strong>Amount:</strong> <span style="font-size:1.3rem;font-weight:700;color:var(--primary);">TZS ${parseInt(payment.amount || 0).toLocaleString()}</span></p>
+    `;
+    document.getElementById('paymentPhone').value = profileData.phone || '';
+    document.getElementById('paymentModalOverlay').classList.add('active');
+  }
+
+  document.getElementById('paymentModalCloseBtn')?.addEventListener('click', () => document.getElementById('paymentModalOverlay')?.classList.remove('active'));
+
+  document.getElementById('processPaymentBtn')?.addEventListener('click', async () => {
+    const method = document.getElementById('paymentMethod').value;
+    const phone = document.getElementById('paymentPhone').value.trim();
+    if (!phone) return showToast('error', 'Enter phone number');
+    if (!currentPaymentId) return showToast('error', 'No payment selected');
+
+    // Map payment method to valid ENUM values in the database
+    const methodMap = { mobile: 'mpesa', bank: 'bank_transfer', card: 'bank_transfer' };
+    const dbMethod = methodMap[method] || 'mpesa';
+
+    const btn = document.getElementById('processPaymentBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    try {
+      const res = await window.API.citizen.makePayment(currentPaymentId, dbMethod, phone);
+      if (res.success) {
+        showToast('success', 'Payment successful!');
+        document.getElementById('paymentModalOverlay').classList.remove('active');
+        loadPayments();
+        loadApplications();
+        loadDocuments();
+      } else {
+        showToast('error', res.message || 'Payment failed');
+      }
+    } catch (e) { showToast('error', 'Network error'); }
+    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-lock"></i> Pay Now'; }
   });
 
-  document.getElementById('paymentStatusFilter').addEventListener('change', function(e) { const f = e.target.value; document.querySelectorAll('#paymentTableBody tr').forEach(row => { const b = row.querySelector('.status-badge'); row.style.display = (f === 'all' || (b && b.textContent.trim() === f)) ? '' : 'none'; }); });
-  document.getElementById('paymentSearchInput').addEventListener('input', function(e) { const s = e.target.value.toLowerCase(); document.querySelectorAll('#paymentTableBody tr').forEach(row => { row.style.display = row.textContent.toLowerCase().includes(s) ? '' : 'none'; }); });
-
-  // ==================== MESSAGES / CHAT ====================
-  function renderMessages() { renderChatHistory(); }
-  function renderChatHistory() { const chatBody = document.getElementById('citizenChatBody'); const history = currentChatTab === 'admin' ? chatHistory : supportChatHistory; chatBody.innerHTML = history.map(msg => `<div class="msg ${msg.sender==='citizen'?'sent':'received'}"><div class="bubble">${msg.text}</div><small>${msg.time}</small></div>`).join(''); setTimeout(() => { chatBody.scrollTop = chatBody.scrollHeight; }, 50); }
-  const chatInput = document.getElementById('citizenChatInput'), sendBtn = document.getElementById('citizenSendBtn');
-  function sendMessage() { const text = chatInput.value.trim(); if (!text) return; const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); if (currentChatTab === 'admin') chatHistory.push({ sender: 'citizen', text, time: timeStr }); else supportChatHistory.push({ sender: 'citizen', text, time: timeStr }); saveAllData(); renderChatHistory(); chatInput.value = ''; chatInput.focus();
-    setTimeout(() => { const replyTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); if (currentChatTab === 'admin') { chatHistory.push({ sender: 'admin', text: 'Thank you for your message. We will respond shortly.', time: replyTime }); } else { const lt = text.toLowerCase(); let reply = 'Thank you for reaching out. How can I assist you further?'; if (lt.includes('application')) reply = 'Submit new applications from "My Applications". Select document type and fill in the details.'; else if (lt.includes('payment')) reply = 'Make payments from "Payments" menu. Click "Pay Now" on any unpaid item.'; else if (lt.includes('document')) reply = 'Once payment is confirmed, documents appear in "My Documents".'; supportChatHistory.push({ sender: 'support', text: reply, time: replyTime }); } saveAllData(); renderChatHistory(); }, 1500); }
-  sendBtn.addEventListener('click', sendMessage); chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-  document.querySelectorAll('.inbox-item').forEach(item => { item.addEventListener('click', () => { document.querySelectorAll('.inbox-item').forEach(i => i.classList.remove('active')); item.classList.add('active'); currentChatTab = item.getAttribute('data-chat'); document.getElementById('citizenChatContactName').textContent = currentChatTab === 'admin' ? 'Local Administrator' : 'Support Assistant'; document.getElementById('chatHeaderIcon').className = currentChatTab === 'admin' ? 'fas fa-user-tie' : 'fas fa-headset'; renderChatHistory(); }); });
-
-  // ==================== ANNOUNCEMENTS WITH IMAGES ====================
-  const announcementsData = [
-    { id: 1, category: 'event', catClass: 'cat-meeting', catLabel: 'Event', title: 'Community Meeting', date: 'June 25, 2026', content: 'Quarterly town hall meeting at the Community Hall.', fullContent: 'Quarterly town hall meeting at the Community Hall. All residents are invited to discuss development plans.', image: '' },
-    { id: 2, category: 'notice', catClass: 'cat-notice', catLabel: 'Notice', title: 'New Business Guidelines', date: 'June 18, 2026', content: 'Updated business permit application guidelines.', fullContent: 'Updated business permit guidelines effective next month.', image: '' },
-    { id: 3, category: 'alert', catClass: 'cat-emergency', catLabel: 'Alert', title: 'Weather Warning', date: 'June 14, 2026', content: 'Heavy rainfall expected from June 20-22.', fullContent: 'Take necessary precautions and avoid low-lying areas.', image: '' },
-    { id: 4, category: 'event', catClass: 'cat-health', catLabel: 'Health', title: 'Free Health Screening', date: 'June 12, 2026', content: 'Free screening at Central Health Center.', fullContent: 'Free health screening this Saturday from 8 AM to 4 PM.', image: '' },
-    { id: 5, category: 'notice', catClass: 'cat-development', catLabel: 'Development', title: 'New Library Construction', date: 'June 8, 2026', content: 'Construction of new public library begins.', fullContent: 'Expected completion December 2026.', image: '' },
-  ];
-
-  function renderAnnouncements() {
-    const grid = document.getElementById('citizenAnnouncementGrid');
-    grid.innerHTML = announcementsData.map(a => `
-      <div class="announcement-card" data-category="${a.category}">
-        ${getAnnouncementImageHTML(a.image, a.title)}
-        <div class="announcement-body">
-          <span class="cat-badge ${a.catClass}">${a.catLabel}</span>
-          <h3>${a.title}</h3>
-          <p class="announcement-date"><i class="far fa-calendar-alt"></i> ${a.date}</p>
-          <p>${a.content}</p>
-          <a class="read-more-link announce-read-btn" data-id="${a.id}">Read More <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-    `).join('');
-    grid.querySelectorAll('.announce-read-btn').forEach(btn => { btn.addEventListener('click', function() { openAnnouncement(parseInt(this.getAttribute('data-id'))); }); });
+  async function downloadReceipt(id) {
+    try {
+      // Use fetchWithAuth to include token
+      const token = window.API.getToken();
+      const response = await fetch(`${API_URL}/citizen/payments/${id}/receipt`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `Receipt_${id}.pdf`; a.click(); URL.revokeObjectURL(url);
+        showToast('success', 'Receipt downloaded!');
+      } else {
+        showToast('error', 'Receipt not available');
+      }
+    } catch (e) { showToast('error', 'Download failed'); }
   }
 
-  function openAnnouncement(id) {
-    const a = announcementsData.find(x => x.id === id);
-    if (!a) return;
-    document.getElementById('announcementContent').innerHTML = `
-      <button class="modal-close modal-close-btn" id="announceCloseBtn">&times;</button>
-      ${getAnnouncementDetailImageHTML(a.image, a.title)}
-      <span class="cat-badge ${a.catClass}">${a.catLabel}</span>
-      <h2>${a.title}</h2>
-      <p class="announcement-date"><i class="far fa-calendar-alt"></i> ${a.date}</p>
-      <p style="margin-top:15px;line-height:1.8;">${a.fullContent}</p>
-    `;
-    const overlay = document.getElementById('announcementModalOverlay'), modal = document.getElementById('announcementModal');
-    overlay.classList.add('active'); modal.classList.add('active');
-    document.getElementById('announceCloseBtn').addEventListener('click', closeAnnouncementModal);
+  document.getElementById('payOutstandingBtn')?.addEventListener('click', () => {
+    const unpaid = payments.find(p => (p.status || p.payment_status || '').toLowerCase() === 'unpaid');
+    if (unpaid) openPaymentModal(unpaid.id);
+    else showToast('info', 'No unpaid payments');
+  });
+
+  document.getElementById('paymentStatusFilter')?.addEventListener('change', function() {
+    const f = this.value.toLowerCase();
+    document.querySelectorAll('#paymentTableBody tr').forEach(r => {
+      const b = r.querySelector('.status-badge');
+      r.style.display = (f === 'all' || (b && b.textContent.trim().toLowerCase() === f)) ? '' : 'none';
+    });
+  });
+  document.getElementById('paymentSearchInput')?.addEventListener('input', function() {
+    const s = this.value.toLowerCase();
+    document.querySelectorAll('#paymentTableBody tr').forEach(r => { r.style.display = r.textContent.toLowerCase().includes(s) ? '' : 'none'; });
+  });
+
+  // ==================== MESSAGES ====================
+  async function loadMessages() {
+    try {
+      const convRes = await window.API.citizen.getConversations();
+      if (convRes.success && convRes.data && convRes.data.length > 0) {
+        const conv = convRes.data[0];
+        document.getElementById('citizenChatContactName').textContent = conv.participant_name || 'Administrator';
+        const msgRes = await window.API.citizen.getMessages(conv.id);
+        const msgs = msgRes.success ? (msgRes.data || msgRes.messages || []) : [];
+        const chatBody = document.getElementById('citizenChatBody');
+        chatBody.innerHTML = msgs.length > 0
+          ? msgs.map(m => {
+              const isSent = (m.sender_role || m.senderRole) === 'citizen';
+              return `<div class="msg ${isSent ? 'sent' : 'received'}"><div class="bubble">${m.message}</div><small>${new Date(m.created_at).toLocaleTimeString()}</small></div>`;
+            }).join('')
+          : '<p class="chat-placeholder">No messages yet. Type below to start!</p>';
+        chatBody.scrollTop = chatBody.scrollHeight;
+        messagesLoaded = true;
+      }
+    } catch (e) { console.error('Messages error:', e); }
   }
-  function closeAnnouncementModal() { document.getElementById('announcementModalOverlay').classList.remove('active'); document.getElementById('announcementModal').classList.remove('active'); }
-  document.getElementById('announcementModalOverlay').addEventListener('click', function(e) { if (e.target === this) closeAnnouncementModal(); });
-  document.querySelectorAll('.filter-btn').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); const filter = btn.getAttribute('data-filter'); document.querySelectorAll('#citizenAnnouncementGrid .announcement-card').forEach(card => { card.style.display = (filter === 'all' || card.getAttribute('data-category') === filter) ? '' : 'none'; }); }); });
+
+  async function sendCitizenMessage() {
+    const input = document.getElementById('citizenChatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.disabled = true;
+    try {
+      const convRes = await window.API.citizen.getConversations();
+      const convId = convRes.success && convRes.data?.length > 0 ? convRes.data[0].id : null;
+      if (convId) {
+        await window.API.citizen.sendMessage(convId, text);
+        input.value = '';
+        await loadMessages();
+      } else {
+        showToast('error', 'No conversation found');
+      }
+    } catch (e) { showToast('error', 'Failed to send'); }
+    finally { input.disabled = false; input.focus(); }
+  }
+
+  document.getElementById('citizenSendBtn')?.addEventListener('click', sendCitizenMessage);
+  document.getElementById('citizenChatInput')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendCitizenMessage(); });
+
+  // ==================== ANNOUNCEMENTS ====================
+  async function loadAnnouncements() {
+    try {
+      const res = await window.API.citizen.getAnnouncements();
+      const announcements = res.success ? (res.data || []) : [];
+      const grid = document.getElementById('citizenAnnouncementGrid');
+      grid.innerHTML = announcements.length > 0
+        ? announcements.map(a => {
+            const imgHTML = a.image
+              ? `<img src="${a.image.startsWith('http') || a.image.startsWith('/') ? a.image : BASE_URL + '/' + a.image}" alt="${a.title}" style="width:100%;height:180px;object-fit:cover;border-radius:8px 8px 0 0;" onerror="this.style.display='none';">`
+              : '';
+            return `
+            <div class="announcement-card" style="overflow:hidden;">
+              ${imgHTML}
+              <div style="padding:18px;">
+                <span class="cat-badge">${a.category || 'General'}</span>
+                <h3>${a.title}</h3>
+                <p class="announcement-date"><i class="far fa-calendar-alt"></i> ${a.published_at ? new Date(a.published_at).toLocaleDateString() : a.date || ''}</p>
+                <p>${(a.description || a.content || '').substring(0, 120)}...</p>
+                <a class="read-more-link announce-read-btn" data-id="${a.id}">Read More <i class="fas fa-arrow-right"></i></a>
+              </div>
+            </div>`;
+          }).join('')
+        : '<p style="text-align:center;">No announcements</p>';
+
+      grid.querySelectorAll('.announce-read-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const a = announcements.find(x => x.id == this.dataset.id);
+          if (!a) return;
+          const detailImg = a.image ? `<img src="${a.image.startsWith('http') || a.image.startsWith('/') ? a.image : BASE_URL + '/' + a.image}" style="width:100%;max-height:300px;object-fit:cover;border-radius:12px;margin-bottom:15px;" onerror="this.style.display='none';">` : '';
+          document.getElementById('announcementContent').innerHTML = `
+            <button class="modal-close modal-close-btn" onclick="document.getElementById('announcementModalOverlay').classList.remove('active')">&times;</button>
+            ${detailImg}
+            <h2>${a.title}</h2>
+            <span class="cat-badge">${a.category || 'General'}</span>
+            <p class="announcement-date"><i class="far fa-calendar-alt"></i> ${a.published_at ? new Date(a.published_at).toLocaleDateString() : a.date || ''}</p>
+            <p style="margin-top:15px;line-height:1.8;">${a.description || a.content || 'No details.'}</p>
+          `;
+          document.getElementById('announcementModalOverlay').classList.add('active');
+        });
+      });
+    } catch (e) { console.error('Announcements error:', e); }
+  }
 
   // ==================== DOCUMENTS ====================
-  function renderDocuments() { const tbody = document.getElementById('documentsTableBody'); if (documents.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No documents available. Make a payment to access documents.</td></tr>'; return; } tbody.innerHTML = documents.map(d => `<tr><td>${d.name}</td><td>#${d.id}</td><td>${d.type}</td><td>${d.issueDate}</td><td><span class="status-badge status-approved">${d.status}</span></td><td><button class="btn-sm dl-btn" data-id="${d.id}"><i class="fas fa-download"></i> Download</button><button class="btn-sm print-btn" data-id="${d.id}" style="margin-left:4px;"><i class="fas fa-print"></i></button><button class="btn-sm share-btn" data-id="${d.id}" style="margin-left:4px;"><i class="fas fa-share"></i></button></td></tr>`).join(''); tbody.querySelectorAll('.dl-btn').forEach(b => b.addEventListener('click', function() { showToast('success', 'Downloading document #' + this.getAttribute('data-id')); })); tbody.querySelectorAll('.print-btn').forEach(b => b.addEventListener('click', () => window.print())); tbody.querySelectorAll('.share-btn').forEach(b => b.addEventListener('click', function() { if (navigator.share) navigator.share({ title: 'LAMS Document', url: window.location.href }); else showToast('info', 'Share link copied!'); })); }
+  async function loadDocuments() {
+    try {
+      const res = await window.API.citizen.getDocuments();
+      const docs = res.success ? (res.data || []) : [];
+      const tbody = document.getElementById('documentsTableBody');
+      tbody.innerHTML = docs.length > 0
+        ? docs.map(d => `
+            <tr>
+              <td><strong>${d.document_type || d.name || 'Document'}</strong></td>
+              <td>${d.document_type || 'N/A'}</td>
+              <td>${d.issueDate || d.issue_date || (d.sent_at ? new Date(d.sent_at).toLocaleDateString() : 'N/A')}</td>
+              <td><span class="status-badge status-approved">Ready</span></td>
+              <td>
+                <button class="btn-sm dl-btn" data-id="${d.id}"><i class="fas fa-download"></i></button>
+                <button class="btn-sm print-btn" data-id="${d.id}"><i class="fas fa-print"></i></button>
+                <button class="btn-sm share-btn" data-id="${d.id}"><i class="fas fa-share"></i></button>
+              </td>
+            </tr>`).join('')
+        : '<tr><td colspan="5" style="text-align:center;">No documents. Make a payment first.</td></tr>';
+
+      tbody.querySelectorAll('.dl-btn').forEach(b => b.addEventListener('click', async function() {
+        try {
+          const token = window.API.getToken();
+          const id = this.dataset.id;
+          const response = await fetch(`${API_URL}/citizen/documents/${id}/download`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `document_${id}`; a.click(); URL.revokeObjectURL(url);
+            showToast('success', 'Downloaded!');
+          } else {
+            showToast('error', 'Download failed');
+          }
+        } catch (e) { showToast('error', 'Network error'); }
+      }));
+
+      tbody.querySelectorAll('.print-btn').forEach(b => b.addEventListener('click', () => {
+        const token = window.API.getToken();
+        const url = `${API_URL}/citizen/documents/${b.dataset.id}/print`;
+        window.open(url + '?token=' + encodeURIComponent(token), '_blank');
+      }));
+
+      tbody.querySelectorAll('.share-btn').forEach(b => b.addEventListener('click', () => {
+        const email = prompt('Enter recipient email:');
+        if (email) {
+          window.API.citizen.shareDocument(b.dataset.id, email).then(res => {
+            showToast(res.success ? 'success' : 'error', res.message || (res.success ? 'Shared!' : 'Failed'));
+          });
+        }
+      }));
+    } catch (e) { console.error('Documents error:', e); }
+  }
 
   // ==================== PROFILE ====================
-  function updateProfileDisplay() { document.getElementById('profileAvatarImg').src = profile.photo; document.getElementById('profileDisplayName').textContent = profile.name; document.getElementById('profileName').textContent = profile.name; document.getElementById('profileEmail').textContent = profile.email; document.getElementById('profilePhone').textContent = profile.phone; document.getElementById('profileAddress').textContent = profile.address || 'Not set'; document.getElementById('sidebarCitizenName').textContent = profile.name; document.getElementById('sidebarAvatarImg').src = profile.photo; document.getElementById('headerUserName').textContent = profile.name.split(' ')[0]; }
-  document.getElementById('openProfileEditBtn').addEventListener('click', openProfileEditModal);
-  function openProfileEditModal() { document.getElementById('editProfileName').value = profile.name; document.getElementById('editProfileEmail').value = profile.email; document.getElementById('editProfilePhone').value = profile.phone; document.getElementById('editProfileAddress').value = profile.address || ''; document.getElementById('profileEditModalOverlay').classList.add('active'); document.getElementById('profileEditModal').classList.add('active'); }
-  function closeProfileEditModal() { document.getElementById('profileEditModalOverlay').classList.remove('active'); document.getElementById('profileEditModal').classList.remove('active'); }
-  document.getElementById('profileEditCloseBtn').addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); closeProfileEditModal(); });
-  document.getElementById('profileEditModalOverlay').addEventListener('click', function(e) { if (e.target === this) closeProfileEditModal(); });
-  document.getElementById('profileEditModalContent').addEventListener('click', function(e) { e.stopPropagation(); });
-  document.getElementById('profileEditForm').addEventListener('submit', function(e) { e.preventDefault(); profile.name = document.getElementById('editProfileName').value; profile.email = document.getElementById('editProfileEmail').value; profile.phone = document.getElementById('editProfilePhone').value; profile.address = document.getElementById('editProfileAddress').value; saveAllData(); updateProfileDisplay(); updateDashboard(); closeProfileEditModal(); showToast('success', 'Profile updated!'); });
-  document.getElementById('profilePhotoUpload').addEventListener('change', function(event) { const file = event.target.files[0]; if (!file) return; if (!file.type.startsWith('image/')) { showToast('error', 'Please select an image file'); return; } const reader = new FileReader(); reader.onload = function(e) { profile.photo = e.target.result; saveAllData(); updateProfileDisplay(); showToast('success', 'Profile photo updated!'); }; reader.readAsDataURL(file); });
-  document.getElementById('openPasswordBtn').addEventListener('click', () => { document.getElementById('passwordModalOverlay').classList.add('active'); document.getElementById('passwordModal').classList.add('active'); });
-  function closePasswordModal() { document.getElementById('passwordModalOverlay').classList.remove('active'); document.getElementById('passwordModal').classList.remove('active'); document.getElementById('passwordChangeForm').reset(); document.getElementById('passwordStrength').innerHTML = ''; }
-  document.getElementById('passwordModalCloseBtn').addEventListener('click', closePasswordModal);
-  document.getElementById('passwordModalOverlay').addEventListener('click', function(e) { if (e.target === this) closePasswordModal(); });
-  document.getElementById('passwordModalContent').addEventListener('click', function(e) { e.stopPropagation(); });
-  document.getElementById('passwordChangeForm').addEventListener('submit', function(e) { e.preventDefault(); const np = document.getElementById('newPassword').value, cp = document.getElementById('confirmPassword').value; if (np !== cp) { showToast('error', 'Passwords do not match'); return; } if (np.length < 6) { showToast('error', 'Minimum 6 characters'); return; } showToast('success', 'Password changed!'); closePasswordModal(); });
-  document.getElementById('newPassword').addEventListener('input', function(e) { const v = e.target.value, d = document.getElementById('passwordStrength'); if (!v) { d.innerHTML = ''; return; } let s = 'Weak', c = '#ef4444'; if (v.length >= 8) { s = 'Medium'; c = '#f59e0b'; } if (v.length >= 10 && /[A-Z]/.test(v) && /[0-9]/.test(v)) { s = 'Strong'; c = '#00b894'; } d.innerHTML = `<small style="color:${c};">Password Strength: ${s}</small>`; });
+  async function loadProfile() {
+    try {
+      const res = await window.API.citizen.getProfile();
+      if (res.success) {
+        const p = res.data?.profile || res.data?.user || res.data || {};
+        profileData = p;
+        document.getElementById('profileDisplayName').textContent = p.full_name || session.full_name || 'Citizen';
+        document.getElementById('profileName').textContent = p.full_name || '-';
+        document.getElementById('profileEmail').textContent = p.email || session.email || '-';
+        document.getElementById('profilePhone').textContent = p.phone || '-';
+        document.getElementById('profileAddress').textContent = p.address || '-';
+        document.getElementById('profileWard').textContent = p.ward_name || session.ward_name || '-';
+        updateUI();
+      }
+    } catch (e) { console.error('Profile error:', e); }
+  }
 
-  window.showFAQ = function() { showToast('info', 'FAQ: Apply via My Applications > New Application.\nPay via Payments > Pay Now.\nDownload via My Documents after payment.'); };
+  document.getElementById('openProfileEditBtn')?.addEventListener('click', () => {
+    document.getElementById('editProfileName').value = profileData.full_name || '';
+    document.getElementById('editProfileEmail').value = profileData.email || session.email || '';
+    document.getElementById('editProfilePhone').value = profileData.phone || '';
+    document.getElementById('editProfileAddress').value = profileData.address || '';
+    document.getElementById('profileEditModalOverlay').classList.add('active');
+  });
+  document.getElementById('profileEditCloseBtn')?.addEventListener('click', () => document.getElementById('profileEditModalOverlay')?.classList.remove('active'));
 
-  citizenSearch.addEventListener('keypress', (e) => { if (e.key === 'Enter') { const t = citizenSearch.value.toLowerCase(); if (t.includes('app')) navigateToPage('applications'); else if (t.includes('pay')) navigateToPage('payments'); else if (t.includes('msg')) navigateToPage('messages'); else if (t.includes('doc')) navigateToPage('documents'); else if (t.includes('profile')) navigateToPage('profile'); else if (t.includes('announce')) navigateToPage('announcements'); else if (t.includes('help')) navigateToPage('help'); else showToast('info', 'Searching: ' + citizenSearch.value); } });
+  document.getElementById('profileEditForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+      full_name: document.getElementById('editProfileName').value,
+      email: document.getElementById('editProfileEmail').value,
+      address: document.getElementById('editProfileAddress').value
+    };
+    const phone = document.getElementById('editProfilePhone').value.trim();
+    if (phone) data.phone = phone;
+    try {
+      const res = await window.API.citizen.updateProfile(data);
+      if (res.success) { showToast('success', 'Profile updated!'); document.getElementById('profileEditModalOverlay').classList.remove('active'); loadProfile(); }
+      else showToast('error', res.message || 'Update failed');
+    } catch (err) { showToast('error', 'Network error'); }
+  });
 
-  function init() { updateProfileDisplay(); updateDashboard(); renderApplications(); renderPayments(); renderAnnouncements(); renderDocuments(); renderNotifications(); updateNotificationBadge(); updateSidebarBadges(); updateClock(); }
+  document.getElementById('profilePhotoUpload')?.addEventListener('change', async function() {
+    const file = this.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return showToast('error', 'Please select an image');
+    const fd = new FormData(); fd.append('profile_photo', file);
+    try {
+      const res = await window.API.citizen.updatePhoto(fd);
+      if (res.success) { showToast('success', 'Photo updated!'); loadProfile(); }
+      else showToast('error', res.message || 'Failed');
+    } catch (e) { showToast('error', 'Upload failed'); }
+  });
+
+  document.getElementById('openPasswordBtn')?.addEventListener('click', () => {
+    document.getElementById('passwordChangeForm')?.reset();
+    document.getElementById('passwordModalOverlay')?.classList.add('active');
+  });
+  document.getElementById('passwordModalCloseBtn')?.addEventListener('click', () => document.getElementById('passwordModalOverlay')?.classList.remove('active'));
+
+  document.getElementById('passwordChangeForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const cp = document.getElementById('currentPassword').value;
+    const np = document.getElementById('newPassword').value;
+    const cf = document.getElementById('confirmPassword').value;
+    if (np !== cf) return showToast('error', 'Passwords do not match');
+    if (np.length < 6) return showToast('error', 'Minimum 6 characters');
+    try {
+      const res = await window.API.citizen.changePassword(cp, np, cf);
+      if (res.success) { showToast('success', 'Password changed!'); document.getElementById('passwordModalOverlay').classList.remove('active'); }
+      else showToast('error', res.message || 'Failed');
+    } catch (e) { showToast('error', 'Network error'); }
+  });
+
+  // ==================== HELP ====================
+  document.getElementById('contactAdminBtn')?.addEventListener('click', async () => {
+    const subject = prompt('Subject:');
+    const message = prompt('Message:');
+    if (subject && message) {
+      try { const res = await window.API.citizen.contactAdmin(subject, message); showToast(res.success ? 'success' : 'error', res.message || 'Sent!'); } catch (e) {}
+    }
+  });
+  document.getElementById('viewFaqBtn')?.addEventListener('click', async () => {
+    try {
+      const res = await window.API.citizen.getFAQs();
+      if (res.success) {
+        const faqs = res.data || [];
+        alert(faqs.length > 0 ? faqs.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n') : 'No FAQs available');
+      }
+    } catch (e) {}
+  });
+  document.getElementById('reportIssueBtn')?.addEventListener('click', async () => {
+    const title = prompt('Issue Title:');
+    const desc = prompt('Description:');
+    if (title && desc) {
+      try { const res = await window.API.citizen.reportIssue(title, desc); showToast(res.success ? 'success' : 'error', res.message || 'Reported!'); } catch (e) {}
+    }
+  });
+
+  // ==================== SEARCH ====================
+  citizenSearch?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      const t = citizenSearch.value.toLowerCase();
+      if (t.includes('app')) navigateToPage('applications');
+      else if (t.includes('pay')) navigateToPage('payments');
+      else if (t.includes('msg') || t.includes('chat')) navigateToPage('messages');
+      else if (t.includes('doc')) navigateToPage('documents');
+      else if (t.includes('profile') || t.includes('account')) navigateToPage('profile');
+      else if (t.includes('announce')) navigateToPage('announcements');
+      else if (t.includes('help') || t.includes('support')) navigateToPage('help');
+    }
+  });
+
+  // ==================== INIT ====================
+  async function init() {
+    await loadProfile();
+    updateUI();
+    updateClock();
+    navigateToPage('dashboard');
+    console.log('👤 LAMS Citizen Portal - Fully Fixed');
+  }
+
   init();
-  console.log('👤 LAMS Citizen Portal v2.0 - Professional Payment Flow Ready');
 });

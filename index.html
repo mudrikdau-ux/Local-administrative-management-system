@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Local Administration Management System - Improving community services through digital transformation.">
+  <meta name="description" content="LAMS | Local Administration Management System - Digital transformation for modern governance">
   <title>LAMS | Local Administration Management System</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,9 +16,9 @@
   <!-- Navbar -->
   <header class="navbar" id="navbar">
     <div class="container nav-container">
-      <a href="#" class="logo">
+      <a href="index.html" class="logo" id="brandLogo">
         <i class="fas fa-landmark"></i>
-        <span>LAMS</span>
+        <span id="systemNameShort">LAMS</span>
       </a>
       <button class="hamburger" id="hamburger" aria-label="Toggle menu">
         <span class="hamburger-line"></span>
@@ -51,12 +51,11 @@
 
   <!-- Hero Section -->
   <section class="hero" id="home">
-    <!-- CHANGE IMAGE HERE: Edit the src below to change the background image -->
-    <img src="image/mm.jpeg" alt="Government building" class="hero-bg-image">
+    <img src="image/index.png" alt="Government building" class="hero-bg-image">
     <div class="hero-overlay"></div>
     <div class="hero-content">
-      <h1 class="hero-title">Local Administration Management System</h1>
-      <p class="hero-subtitle">Digital transformation for modern governance</p>
+      <h1 class="hero-title" id="heroTitle">Local Administration Management System</h1>
+      <p class="hero-subtitle" id="heroSubtitle">Digital transformation for modern governance</p>
       <div class="hero-buttons">
         <a href="login.html" class="btn btn-primary btn-lg">Login</a>
         <a href="terms.html" class="btn btn-outline btn-lg">Learn More</a>
@@ -97,25 +96,53 @@
   </section>
 
   <!-- Stats -->
-  <section class="stats section-padding">
+  <section class="stats section-padding" id="statsSection">
     <div class="container">
-      <div class="stats-grid">
+      <div class="stats-grid" id="statsGrid">
         <div class="stat-item">
-          <span class="stat-number" data-target="1250">0</span>
+          <span class="stat-number" id="statCitizens">0</span>
           <span class="stat-label">Registered Citizens</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number" data-target="890">0</span>
+          <span class="stat-number" id="statDocuments">0</span>
           <span class="stat-label">Documents Issued</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number" data-target="145">0</span>
+          <span class="stat-number" id="statAnnouncements">0</span>
           <span class="stat-label">Announcements</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number" data-target="2100">0</span>
+          <span class="stat-number" id="statServices">0</span>
           <span class="stat-label">Services Completed</span>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Latest Announcements -->
+  <section class="announcements-preview section-padding" id="announcementsSection">
+    <div class="container">
+      <div class="section-header">
+        <h2>Latest Announcements</h2>
+        <p>Stay informed with official community updates</p>
+      </div>
+      <div class="announcements-grid" id="announcementsGrid">
+        <!-- Dynamically loaded -->
+      </div>
+      <div class="announcements-loading" id="announcementsLoading" style="text-align:center;padding:40px 0;display:none;">
+        <i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary-color);"></i>
+        <p>Loading announcements...</p>
+      </div>
+      <div class="announcements-error" id="announcementsError" style="text-align:center;padding:40px 0;display:none;color:var(--danger);">
+        <i class="fas fa-exclamation-circle" style="font-size:2rem;"></i>
+        <p id="announcementsErrorMessage">Unable to load announcements. Please try again later.</p>
+      </div>
+      <div class="announcements-empty" id="announcementsEmpty" style="text-align:center;padding:40px 0;display:none;">
+        <i class="fas fa-bullhorn" style="font-size:2rem;color:var(--text-light);"></i>
+        <p>No announcements available at this time.</p>
+      </div>
+      <div style="text-align:center;margin-top:30px;">
+        <a href="announce.html" class="btn btn-primary">View All Announcements</a>
       </div>
     </div>
   </section>
@@ -125,10 +152,10 @@
     <div class="container">
       <div class="section-header">
         <h2>About Our Administration</h2>
-        <p>Dedicated to serving our community with integrity.</p>
+        <p id="orgTagline">Dedicated to serving our community with integrity.</p>
       </div>
       <div class="about-content">
-        <p>The Local Administration Office leverages the LAMS platform to bring services closer to you, ensuring every resident has seamless access to essential government resources.</p>
+        <p id="orgDescription">The Local Administration Office leverages the LAMS platform to bring services closer to you, ensuring every resident has seamless access to essential government resources.</p>
         <a href="about.html" class="btn btn-primary">Read More</a>
       </div>
     </div>
@@ -141,21 +168,21 @@
         <h2>Contact Us</h2>
         <p>We are here to assist you</p>
       </div>
-      <div class="contact-grid">
+      <div class="contact-grid" id="contactGrid">
         <div class="contact-card">
           <i class="fas fa-phone-alt"></i>
           <h3>Phone</h3>
-          <p>+255 123 456 789</p>
+          <p id="contactPhone">+255 123 456 789</p>
         </div>
         <div class="contact-card">
           <i class="fas fa-envelope"></i>
           <h3>Email</h3>
-          <p>info@lams.go.tz</p>
+          <p id="contactEmail">info@lams.go.tz</p>
         </div>
         <div class="contact-card">
           <i class="fas fa-map-marker-alt"></i>
           <h3>Office</h3>
-          <p>Local Government, Zanzibar</p>
+          <p id="contactAddress">Local Government, Zanzibar</p>
         </div>
       </div>
     </div>
@@ -164,12 +191,14 @@
   <!-- Footer -->
   <footer class="footer">
     <div class="container footer-bottom">
-      <p>&copy; <span id="year"></span> Local Administration Management System. All rights reserved.</p>
+      <p>&copy; <span id="year"></span> <span id="footerOrgName">Local Administration Management System</span>. All rights reserved.</p>
     </div>
   </footer>
 
   <button id="backToTop" class="back-to-top"><i class="fas fa-arrow-up"></i></button>
 
+  <!-- API & Scripts -->
+  <script src="js/api.js"></script>
   <script src="js/index.js"></script>
   <script src="js/bot.js"></script>
 </body>

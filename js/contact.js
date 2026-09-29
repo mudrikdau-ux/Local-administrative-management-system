@@ -1,6 +1,5 @@
-// contact.js
-
-document.addEventListener('DOMContentLoaded', () => {
+// contact.js - Fully Connected to Backend
+document.addEventListener('DOMContentLoaded', async () => {
   // ==================== DOM ELEMENTS ====================
   const themeToggle = document.getElementById('themeToggle');
   const body = document.body;
@@ -20,21 +19,67 @@ document.addEventListener('DOMContentLoaded', () => {
   const pageHeader = document.getElementById('pageHeader');
   const mapContainer = document.getElementById('mapContainer');
 
-  // Set current year in footer
+  // System elements
+  const systemNameShort = document.getElementById('systemNameShort');
+  const footerOrgName = document.getElementById('footerOrgName');
+
+  // Contact info elements
+  const contactPhone = document.getElementById('contactPhone');
+  const contactEmail = document.getElementById('contactEmail');
+  const contactAddress = document.getElementById('contactAddress');
+  const contactHours = document.getElementById('contactHours');
+  const officeAddress = document.getElementById('officeAddress');
+
+  // ==================== SET YEAR & SYSTEM NAME ====================
   if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 
+  // ==================== LOAD SYSTEM SETTINGS ====================
+  async function loadSystemSettings() {
+    try {
+      const res = await API.superAdmin.getSettings();
+      if (res.success && res.data) {
+        const settings = res.data;
+        
+        if (settings.system_name && systemNameShort) {
+          systemNameShort.textContent = settings.system_name;
+        }
+        if (settings.organization_name && footerOrgName) {
+          footerOrgName.textContent = settings.organization_name;
+        }
+        if (settings.contact_phone && contactPhone) {
+          contactPhone.textContent = settings.contact_phone;
+        }
+        if (settings.contact_email && contactEmail) {
+          contactEmail.textContent = settings.contact_email;
+        }
+        if (settings.system_address && contactAddress) {
+          contactAddress.innerHTML = settings.system_address.replace(/\n/g, '<br>');
+        }
+        if (settings.office_hours && contactHours) {
+          contactHours.textContent = settings.office_hours;
+        }
+        if (settings.system_address && officeAddress) {
+          officeAddress.textContent = settings.system_address;
+        }
+        
+        console.log('✅ [LAMS] System settings loaded');
+      }
+    } catch (e) {
+      console.log('ℹ️ [LAMS] Settings not available (may need login)');
+    }
+  }
+  await loadSystemSettings();
+
   // ==================== BACKGROUND IMAGE MANAGEMENT ====================
-  // Background images are set via JavaScript, NOT in CSS
   function setPageHeaderBackground() {
     if (pageHeader) {
-      const headerBgUrl = 'https://images.unsplash.com/photo-1423666639041-f56000c27a9a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1350&q=80';
+      const headerBgUrl = 'image/contact.png'; // Replace with your desired image URL
       pageHeader.style.backgroundImage = `url('${headerBgUrl}')`;
       pageHeader.style.backgroundSize = 'cover';
       pageHeader.style.backgroundPosition = 'center';
       pageHeader.style.backgroundRepeat = 'no-repeat';
       pageHeader.style.position = 'relative';
       
-      // Add overlay
       let overlay = pageHeader.querySelector('.header-overlay');
       if (!overlay) {
         overlay = document.createElement('div');
@@ -51,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
         pageHeader.insertBefore(overlay, pageHeader.firstChild);
       }
       
-      // Make text white for readability
       const h1 = pageHeader.querySelector('h1');
       const p = pageHeader.querySelector('p');
       if (h1) h1.style.color = '#fff';
@@ -61,45 +105,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setMapBackground() {
     if (mapContainer) {
-      // Zanzibar Mpendae coordinates
-      // Mpendae is located in Zanzibar Urban/West Region
-      // Coordinates: approximately -6.1659° S, 39.2026° E
-      const mpendaeLat = -6.1659;
-      const mpendaeLng = 39.2026;
-      const zoomLevel = 16;
-      
-      mapContainer.innerHTML = `
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3967.6200!2d${mpendaeLng}!3d${mpendaeLat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x185c4bae169bd6f1%3A0x4e3dfcf3a2c5c9e1!2sMpendae%2C%20Zanzibar%2C%20Tanzania!5e0!3m2!1sen!2stz!4v1680000000000"
-          width="100%"
-          height="100%"
-          style="border:0;"
-          allowfullscreen=""
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-          title="LAMS Office Location - Mpendae, Zanzibar">
-        </iframe>
-      `;
-      
-      // Also update the office location text to reflect Zanzibar Mpendae
-      const locationInfoDiv = document.querySelector('.location-info');
-      if (locationInfoDiv) {
-        const paragraphs = locationInfoDiv.querySelectorAll('p');
-        if (paragraphs.length >= 2) {
-          paragraphs[0].textContent = 'Mpendae Area, Zanzibar Urban/West Region';
-          paragraphs[1].textContent = 'Zanzibar, Tanzania';
-        }
-      }
-      
-      // Update office name
-      const officeNameEl = document.getElementById('officeName');
-      if (officeNameEl) {
-        officeNameEl.textContent = 'LAMS Office - Mpendae, Zanzibar';
+      // Google Maps Embed API iframe - already in HTML
+      // Ensure the iframe is properly styled
+      const iframe = mapContainer.querySelector('iframe');
+      if (iframe) {
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = '0';
+        iframe.style.position = 'absolute';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
       }
     }
   }
 
-  // Initialize backgrounds
   setPageHeaderBackground();
   setMapBackground();
 
@@ -158,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   });
 
-  // ==================== LANGUAGE TOGGLE (English/Swahili) ====================
+  // ==================== LANGUAGE TOGGLE ====================
   const translations = {
     en: {
       pageTitle: 'Contact Us',
@@ -178,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
       phoneLabel: 'Phone Number',
       subjectLabel: 'Subject',
       messageLabel: 'Message',
-      submitBtn: '<i class="fas fa-paper-plane"></i> Send Message',
+      submitBtnText: 'Send Message',
       successTitle: 'Message Sent Successfully!',
       successText: 'Thank you for contacting us. We will get back to you shortly.',
       sendAnother: 'Send Another Message',
@@ -194,12 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
       faq3Answer: 'We respond to all inquiries within 24 hours during working days.',
       ctaTitle: 'Need Assistance?',
       ctaText: 'Contact our administration team today',
-      ctaMessageBtn: '<i class="fas fa-paper-plane"></i> Send Message',
-      ctaLoginBtn: '<i class="fas fa-sign-in-alt"></i> Login',
-      footerDesc: 'Modernizing local administration for better community service delivery.',
-      quickLinksTitle: 'Quick Links',
-      contactInfoFooterTitle: 'Contact Info',
-      footerRights: 'Local Administration Management System. All Rights Reserved.',
       fullNamePlaceholder: 'Enter your full name',
       emailPlaceholder: 'Enter your email address',
       phonePlaceholder: 'Enter your phone number',
@@ -218,7 +231,11 @@ document.addEventListener('DOMContentLoaded', () => {
       phoneInvalid: 'Please enter a valid phone number',
       subjectRequired: 'Please select a subject',
       messageRequired: 'Message is required',
-      messageMin: 'Message must be at least 10 characters'
+      messageMin: 'Message must be at least 10 characters',
+      sending: 'Sending...',
+      successMessage: 'Your message has been sent successfully!',
+      errorTryAgain: 'Failed to send message. Please try again.',
+      rateLimit: 'Too many requests. Please wait a few minutes before trying again.'
     },
     sw: {
       pageTitle: 'Wasiliana Nasi',
@@ -238,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
       phoneLabel: 'Nambari ya Simu',
       subjectLabel: 'Mada',
       messageLabel: 'Ujumbe',
-      submitBtn: '<i class="fas fa-paper-plane"></i> Tuma Ujumbe',
+      submitBtnText: 'Tuma Ujumbe',
       successTitle: 'Ujumbe Umetumwa kwa Mafanikio!',
       successText: 'Asante kwa kuwasiliana nasi. Tutakujibu hivi karibuni.',
       sendAnother: 'Tuma Ujumbe Mwingine',
@@ -254,12 +271,6 @@ document.addEventListener('DOMContentLoaded', () => {
       faq3Answer: 'Tunajibu maswali yote ndani ya masaa 24 wakati wa siku za kazi.',
       ctaTitle: 'Unahitaji Msaada?',
       ctaText: 'Wasiliana na timu yetu ya utawala leo',
-      ctaMessageBtn: '<i class="fas fa-paper-plane"></i> Tuma Ujumbe',
-      ctaLoginBtn: '<i class="fas fa-sign-in-alt"></i> Ingia',
-      footerDesc: 'Kuboresha utawala wa mtaa kwa utoaji bora wa huduma za jamii.',
-      quickLinksTitle: 'Viungo vya Haraka',
-      contactInfoFooterTitle: 'Mawasiliano',
-      footerRights: 'Mfumo wa Usimamizi wa Utawala wa Mtaa. Haki Zote Zimehifadhiwa.',
       fullNamePlaceholder: 'Ingiza jina lako kamili',
       emailPlaceholder: 'Ingiza anwani yako ya barua pepe',
       phonePlaceholder: 'Ingiza nambari yako ya simu',
@@ -278,7 +289,11 @@ document.addEventListener('DOMContentLoaded', () => {
       phoneInvalid: 'Tafadhali ingiza nambari halali ya simu',
       subjectRequired: 'Tafadhali chagua mada',
       messageRequired: 'Ujumbe unahitajika',
-      messageMin: 'Ujumbe lazima uwe na herufi angalau 10'
+      messageMin: 'Ujumbe lazima uwe na herufi angalau 10',
+      sending: 'Inatuma...',
+      successMessage: 'Ujumbe wako umetumwa kwa mafanikio!',
+      errorTryAgain: 'Imeshindwa kutuma ujumbe. Tafadhali jaribu tena.',
+      rateLimit: 'Maombi mengi sana. Tafadhali subiri dakika chache kabla ya kujaribu tena.'
     }
   };
 
@@ -290,19 +305,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (langText) langText.textContent = lang === 'en' ? 'EN' : 'SW';
     
-    // Apply translations to all elements with IDs matching translation keys
     for (const [key, value] of Object.entries(t)) {
       const el = document.getElementById(key);
       if (el) {
-        if (key === 'submitBtn' || key === 'ctaMessageBtn' || key === 'ctaLoginBtn') {
-          el.innerHTML = value;
-        } else {
-          el.textContent = value;
-        }
+        el.textContent = value;
       }
     }
     
-    // Update placeholders
+    const submitBtnText = document.getElementById('submitBtnText');
+    if (submitBtnText) submitBtnText.textContent = t.submitBtnText;
+    
     const fullNameInput = document.getElementById('fullName');
     const emailInput = document.getElementById('email');
     const phoneInput = document.getElementById('phone');
@@ -312,7 +324,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (phoneInput) phoneInput.placeholder = t.phonePlaceholder;
     if (messageInput) messageInput.placeholder = t.messagePlaceholder;
     
-    // Update subject select options
     const subjectSelect = document.getElementById('subject');
     if (subjectSelect) {
       const options = subjectSelect.querySelectorAll('option');
@@ -346,10 +357,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Apply saved language on load
   applyLanguage(currentLang);
 
-  // ==================== CONTACT FORM VALIDATION & SUBMISSION ====================
+  // ==================== CONTACT FORM HANDLING ====================
   const fullNameInput = document.getElementById('fullName');
   const emailInput = document.getElementById('email');
   const phoneInput = document.getElementById('phone');
@@ -362,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const subjectError = document.getElementById('subjectError');
   const messageError = document.getElementById('messageError');
 
-  // Clear error messages on input
   [fullNameInput, emailInput, phoneInput, subjectInput, messageInput].forEach(input => {
     if (input) {
       input.addEventListener('input', () => {
@@ -376,55 +385,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ==================== ADMIN INBOX INTEGRATION ====================
-  function saveMessageToAdminInbox(messageData) {
-    // Get existing messages from localStorage
-    let inboxMessages = [];
-    const storedMessages = localStorage.getItem('lams_admin_inbox');
-    if (storedMessages) {
-      try {
-        inboxMessages = JSON.parse(storedMessages);
-      } catch (e) {
-        console.warn('Failed to parse existing inbox messages:', e);
-        inboxMessages = [];
-      }
-    }
+  // ==================== FORM SUBMISSION ====================
+  let isSubmitting = false;
 
-    // Create new message object
-    const newMessage = {
-      id: Date.now(),
-      ...messageData,
-      status: 'unread',
-      receivedAt: new Date().toISOString(),
-      repliedAt: null,
-      replyMessage: null
-    };
-
-    // Add to beginning of array (newest first)
-    inboxMessages.unshift(newMessage);
-
-    // Save back to localStorage
-    localStorage.setItem('lams_admin_inbox', JSON.stringify(inboxMessages));
-
-    // Dispatch custom event for real-time updates (if admin panel is open)
-    window.dispatchEvent(new CustomEvent('lamsNewMessage', { 
-      detail: { message: newMessage } 
-    }));
-
-    // Also store in session storage for same-session access
-    sessionStorage.setItem('lams_admin_inbox', JSON.stringify(inboxMessages));
-
-    console.log('✅ Message saved to Admin Inbox:', newMessage.id);
-    return newMessage;
-  }
-
-  // Form submission
-  contactForm.addEventListener('submit', (e) => {
+  contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
     
     const t = translations[currentLang];
     
-    // Reset all error messages
     fullNameError.textContent = '';
     emailError.textContent = '';
     phoneError.textContent = '';
@@ -433,7 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isValid = true;
 
-    // Validate Full Name
     if (!fullNameInput.value.trim()) {
       fullNameError.textContent = t.fullNameRequired;
       isValid = false;
@@ -442,7 +411,6 @@ document.addEventListener('DOMContentLoaded', () => {
       isValid = false;
     }
 
-    // Validate Email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailInput.value.trim()) {
       emailError.textContent = t.emailRequired;
@@ -452,19 +420,16 @@ document.addEventListener('DOMContentLoaded', () => {
       isValid = false;
     }
 
-    // Validate Phone (optional but must be valid if provided)
     if (phoneInput.value.trim() && !/^[\d\s+\-()]{7,15}$/.test(phoneInput.value.trim())) {
       phoneError.textContent = t.phoneInvalid;
       isValid = false;
     }
 
-    // Validate Subject
     if (!subjectInput.value) {
       subjectError.textContent = t.subjectRequired;
       isValid = false;
     }
 
-    // Validate Message
     if (!messageInput.value.trim()) {
       messageError.textContent = t.messageRequired;
       isValid = false;
@@ -473,41 +438,56 @@ document.addEventListener('DOMContentLoaded', () => {
       isValid = false;
     }
 
-    // If valid, save to admin inbox and show success
-    if (isValid) {
-      const messageData = {
-        fullName: fullNameInput.value.trim(),
-        email: emailInput.value.trim(),
-        phone: phoneInput.value.trim(),
-        subject: subjectInput.value,
-        subjectLabel: subjectInput.options[subjectInput.selectedIndex]?.text || subjectInput.value,
-        message: messageInput.value.trim(),
-        language: currentLang,
-        location: 'Mpendae, Zanzibar'
-      };
-
-      // Save to Admin Inbox
-      saveMessageToAdminInbox(messageData);
-
-      // Hide the form
-      contactForm.classList.add('hidden');
-      // Show success message
-      formSuccess.classList.add('show');
-      // Scroll to success message
-      formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      // Log for debugging
-      console.log('📩 Contact form submitted and saved to admin inbox:', messageData);
-    } else {
-      // Scroll to the first error
+    if (!isValid) {
       const firstError = document.querySelector('.error-message:not(:empty)');
       if (firstError) {
         firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
+      return;
+    }
+
+    const formData = {
+      full_name: fullNameInput.value.trim(),
+      email: emailInput.value.trim(),
+      phone: phoneInput.value.trim(),
+      subject: subjectInput.value,
+      message: messageInput.value.trim()
+    };
+
+    isSubmitting = true;
+    const submitBtn = document.getElementById('submitBtn');
+    const submitBtnText = document.getElementById('submitBtnText');
+    submitBtn.disabled = true;
+    submitBtnText.textContent = t.sending;
+
+    try {
+      console.log('📨 [LAMS] Sending contact message...');
+      const res = await API.public.sendContact(formData);
+      console.log('📨 [LAMS] Response:', res);
+
+      if (res.success) {
+        contactForm.classList.add('hidden');
+        formSuccess.classList.add('show');
+        formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        contactForm.reset();
+      } else {
+        if (res.message && res.message.toLowerCase().includes('too many')) {
+          showToast('error', t.rateLimit);
+        } else {
+          showToast('error', res.message || t.errorTryAgain);
+        }
+      }
+    } catch (error) {
+      console.error('❌ [LAMS] Contact form error:', error);
+      showToast('error', t.errorTryAgain);
+    } finally {
+      isSubmitting = false;
+      submitBtn.disabled = false;
+      submitBtnText.textContent = t.submitBtnText;
     }
   });
 
-  // Send Another Message button
+  // ==================== SEND ANOTHER ====================
   sendAnotherBtn.addEventListener('click', () => {
     contactForm.reset();
     [fullNameError, emailError, phoneError, subjectError, messageError].forEach(el => {
@@ -517,6 +497,42 @@ document.addEventListener('DOMContentLoaded', () => {
     formSuccess.classList.remove('show');
     contactForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
+
+  // ==================== SHOW TOAST ====================
+  function showToast(type, message) {
+    const existing = document.querySelector('.toast-container');
+    if (!existing) {
+      const container = document.createElement('div');
+      container.className = 'toast-container';
+      container.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+      document.body.appendChild(container);
+    }
+    
+    const container = document.querySelector('.toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    const icons = { success: 'fa-check-circle', error: 'fa-times-circle', info: 'fa-info-circle', warning: 'fa-exclamation-triangle' };
+    toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> ${message}`;
+    toast.style.cssText = `
+      padding: 14px 22px;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      animation: toastIn 0.4s ease, toastOut 0.4s ease 3s forwards;
+      min-width: 280px;
+      background: ${type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : type === 'warning' ? '#d97706' : '#2563eb'};
+    `;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+      if (toast.parentNode) toast.remove();
+    }, 4000);
+  }
 
   // ==================== FAQ ACCORDION ====================
   faqQuestions.forEach(question => {
@@ -536,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ==================== SCROLL REVEAL ANIMATION ====================
+  // ==================== SCROLL REVEAL ====================
   const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -596,7 +612,21 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('📞 LAMS Contact Page - Initialized');
   console.log('📍 Location: Mpendae, Zanzibar');
   console.log('✅ Language:', currentLang.toUpperCase());
-  console.log('✅ Admin inbox integration ready');
-  console.log('✅ Background images managed via JavaScript');
-  console.log('✅ Form validation active');
+  console.log('✅ Connected to backend via API');
+  console.log('✅ Google Maps Embed API iframe loaded');
+  console.log('✅ Form submission ready');
 });
+
+// Add toast animation styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  @keyframes toastIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; }
+    to { opacity: 0; transform: translateY(-10px); }
+  }
+`;
+document.head.appendChild(styleSheet);

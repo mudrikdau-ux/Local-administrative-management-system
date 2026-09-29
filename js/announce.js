@@ -1,6 +1,5 @@
-// announcement.js
-
-document.addEventListener('DOMContentLoaded', () => {
+// announcement.js - Fully Connected to Backend
+document.addEventListener('DOMContentLoaded', async () => {
   // ==================== DOM ELEMENTS ====================
   const themeToggle = document.getElementById('themeToggle');
   const body = document.body;
@@ -19,6 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsCount = document.getElementById('resultsCount');
   const resultsInfo = document.getElementById('resultsInfo');
   
+  // Pagination elements
+  const paginationContainer = document.getElementById('paginationContainer');
+  const prevPageBtn = document.getElementById('prevPageBtn');
+  const nextPageBtn = document.getElementById('nextPageBtn');
+  const paginationInfo = document.getElementById('paginationInfo');
+  
+  // System elements
+  const systemNameShort = document.getElementById('systemNameShort');
+  const footerOrgName = document.getElementById('footerOrgName');
+  
   // Language elements
   const languageToggle = document.getElementById('languageToggle');
   const langText = document.querySelector('.lang-text');
@@ -32,8 +41,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const detailsModal = document.getElementById('detailsModal');
   const detailsModalClose = document.getElementById('detailsModalClose');
 
-  // Set current year
+  // ==================== STATE ====================
+  let currentPage = 1;
+  const perPage = 6;
+  let totalPages = 0;
+  let totalItems = 0;
+  let currentFilter = 'all';
+  let currentSearch = '';
+  let announcementsCache = [];
+  let isFetching = false;
+
+  // ==================== SET YEAR & SYSTEM NAME ====================
   if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+
+  // Load system settings
+  async function loadSystemSettings() {
+    try {
+      const res = await API.superAdmin.getSettings();
+      if (res.success && res.data) {
+        if (res.data.system_name && systemNameShort) {
+          systemNameShort.textContent = res.data.system_name;
+        }
+        if (res.data.organization_name && footerOrgName) {
+          footerOrgName.textContent = res.data.organization_name;
+        }
+      }
+    } catch (e) {
+      console.log('ℹ️ [LAMS] Settings not available (may need login)');
+    }
+  }
+  await loadSystemSettings();
 
   // ==================== LANGUAGE SYSTEM ====================
   let currentLang = localStorage.getItem('lams_language') || 'en';
@@ -53,25 +90,9 @@ document.addEventListener('DOMContentLoaded', () => {
       cancel: 'Cancel',
       shareLabel: 'Share:',
       readMore: 'Read More',
-      footerDesc: 'Modernizing local administration for better community service delivery.',
-      quickLinksTitle: 'Quick Links',
-      contactTitle: 'Contact Info',
-      footerRights: 'Local Administration Management System. All Rights Reserved.',
-      // Category translations for filter
-      allCategories: 'All Categories',
-      general: 'General Announcements',
-      notice: 'Community Notices',
-      event: 'Events',
-      emergency: 'Emergency Notices',
-      meeting: 'Community Meetings',
-      development: 'Development Projects',
-      // Category display names
-      generalDisplay: 'General',
-      noticeDisplay: 'Notice',
-      eventDisplay: 'Event',
-      emergencyDisplay: 'Emergency',
-      meetingDisplay: 'Meeting',
-      developmentDisplay: 'Development'
+      prevPage: 'Previous',
+      nextPage: 'Next',
+      pageOf: 'Page {page} of {total}'
     },
     sw: {
       pageTitle: 'Matangazo',
@@ -87,25 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
       cancel: 'Ghairi',
       shareLabel: 'Shiriki:',
       readMore: 'Soma Zaidi',
-      footerDesc: 'Kuboresha utawala wa mtaa kwa utoaji bora wa huduma za jamii.',
-      quickLinksTitle: 'Viungo vya Haraka',
-      contactTitle: 'Mawasiliano',
-      footerRights: 'Mfumo wa Usimamizi wa Utawala wa Mtaa. Haki Zote Zimehifadhiwa.',
-      // Category translations for filter
-      allCategories: 'Makundi Yote',
-      general: 'Matangazo ya Jumla',
-      notice: 'Notisi za Jamii',
-      event: 'Matukio',
-      emergency: 'Notisi za Dharura',
-      meeting: 'Mikutano ya Jamii',
-      development: 'Miradi ya Maendeleo',
-      // Category display names
-      generalDisplay: 'Jumla',
-      noticeDisplay: 'Notisi',
-      eventDisplay: 'Tukio',
-      emergencyDisplay: 'Dharura',
-      meetingDisplay: 'Mkutano',
-      developmentDisplay: 'Maendeleo'
+      prevPage: 'Iliyopita',
+      nextPage: 'Inayofuata',
+      pageOf: 'Ukurasa {page} wa {total}'
     }
   };
 
@@ -113,35 +118,26 @@ document.addEventListener('DOMContentLoaded', () => {
     currentLang = lang;
     const t = translations[lang];
     
-    // Update language toggle button
-    if (langText) {
-      langText.textContent = lang === 'en' ? 'EN' : 'SW';
-    }
+    if (langText) langText.textContent = lang === 'en' ? 'EN' : 'SW';
     
-    // Update page header
     const pageTitle = document.getElementById('pageTitle');
     const pageSubtitle = document.getElementById('pageSubtitle');
     if (pageTitle) pageTitle.textContent = t.pageTitle;
     if (pageSubtitle) pageSubtitle.textContent = t.pageSubtitle;
     
-    // Update search placeholder
     if (searchInput) searchInput.placeholder = t.searchPlaceholder;
     
-    // Update results label
     const resultsLabel = document.getElementById('resultsLabel');
     if (resultsLabel) resultsLabel.textContent = t.resultsLabel;
     
-    // Update no results
     const noResultsTitle = document.getElementById('noResultsTitle');
     const noResultsText = document.getElementById('noResultsText');
     if (noResultsTitle) noResultsTitle.textContent = t.noResultsTitle;
     if (noResultsText) noResultsText.textContent = t.noResultsText;
     
-    // Update loading
     const loadingText = document.getElementById('loadingText');
     if (loadingText) loadingText.textContent = t.loadingText;
     
-    // Update login modal
     const loginModalTitle = document.getElementById('loginModalTitle');
     const loginModalText = document.getElementById('loginModalText');
     const loginNowBtn = document.getElementById('loginNowBtn');
@@ -151,224 +147,121 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginNowBtn) loginNowBtn.textContent = t.loginNow;
     if (loginCancelBtn) loginCancelBtn.textContent = t.cancel;
     
-    // Update share label
     const shareLabel = document.getElementById('shareLabel');
     if (shareLabel) shareLabel.textContent = t.shareLabel;
     
-    // Update footer
-    const footerDesc = document.getElementById('footerDesc');
-    const quickLinksTitle = document.getElementById('quickLinksTitle');
-    const contactTitle = document.getElementById('contactTitle');
-    const footerRights = document.getElementById('footerRights');
-    if (footerDesc) footerDesc.textContent = t.footerDesc;
-    if (quickLinksTitle) quickLinksTitle.textContent = t.quickLinksTitle;
-    if (contactTitle) contactTitle.textContent = t.contactTitle;
-    if (footerRights) footerRights.textContent = t.footerRights;
-    
-    // Update category filter options
-    updateCategoryFilter(lang);
-    
-    // Save language preference
     localStorage.setItem('lams_language', lang);
-    
-    // Re-render announcements (updates category labels and Read More buttons)
-    filterAnnouncements();
   }
 
-  function updateCategoryFilter(lang) {
-    if (!categoryFilter) return;
-    
-    const t = translations[lang];
-    const options = categoryFilter.querySelectorAll('option');
-    
-    options.forEach(option => {
-      const value = option.value;
-      if (value === 'all') {
-        option.textContent = t.allCategories;
-      } else if (t[value]) {
-        option.textContent = t[value];
-      }
-    });
-  }
-
-  // Language toggle event
   if (languageToggle) {
     languageToggle.addEventListener('click', () => {
       const newLang = currentLang === 'en' ? 'sw' : 'en';
       applyLanguage(newLang);
+      fetchAnnouncements(currentPage);
     });
-  }
-
-  // ==================== ANNOUNCEMENT DATA SOURCE ====================
-  function getAnnouncements() {
-    const storedAnnouncements = localStorage.getItem('lams_announcements');
-    if (storedAnnouncements) {
-      try {
-        const parsed = JSON.parse(storedAnnouncements);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      } catch (e) {
-        console.warn('Failed to parse stored announcements:', e);
-      }
-    }
-
-    const sessionAnnouncements = sessionStorage.getItem('lams_announcements');
-    if (sessionAnnouncements) {
-      try {
-        const parsed = JSON.parse(sessionAnnouncements);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      } catch (e) {
-        console.warn('Failed to parse session announcements:', e);
-      }
-    }
-
-    return getDefaultAnnouncements();
-  }
-
-  function getDefaultAnnouncements() {
-    return [
-      { 
-        id: 1, 
-        title: 'Monthly Community Health Screening', 
-        title_sw: 'Uchunguzi wa Afya ya Jamii wa Kila Mwezi',
-        category: 'general', 
-        date: '2026-06-20', 
-        summary: 'Free health screening for all community members at the central health center.', 
-        summary_sw: 'Uchunguzi wa afya bure kwa wanajamii wote katika kituo cha afya cha kati.',
-        image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 
-        content: 'The local administration is pleased to announce the monthly community health screening program. All residents are invited to participate in this free health initiative.',
-        content_sw: 'Utawala wa mtaa unafurahi kutangaza programu ya uchunguzi wa afya ya jamii ya kila mwezi. Wakazi wote wanaalikwa kushiriki katika mpango huu wa afya wa bure.',
-        author: 'Health Department'
-      },
-      { 
-        id: 2, 
-        title: 'Public Notice: New Business Permit Guidelines', 
-        title_sw: 'Notisi ya Umma: Miongozo Mpya ya Vibali vya Biashara',
-        category: 'notice', 
-        date: '2026-06-18', 
-        summary: 'Updated guidelines for business permit applications effective next month.', 
-        summary_sw: 'Miongozo iliyosasishwa ya maombi ya vibali vya biashara kuanzia mwezi ujao.',
-        image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 
-        content: 'The Local Administration Office issues a public notice regarding updated business permit guidelines effective from July 1, 2026.',
-        content_sw: 'Ofisi ya Utawala wa Mtaa inatoa notisi ya umma kuhusu miongozo iliyosasishwa ya vibali vya biashara kuanzia Julai 1, 2026.',
-        author: 'Administration Office'
-      },
-      { 
-        id: 3, 
-        title: 'Quarterly Community Development Forum', 
-        title_sw: 'Jukwaa la Maendeleo ya Jamii la Kila Robo',
-        category: 'meeting', 
-        date: '2026-06-25', 
-        summary: 'Join us to discuss infrastructure projects and community improvement initiatives.', 
-        summary_sw: 'Jiunge nasi kujadili miradi ya miundombinu na mipango ya kuboresha jamii.',
-        image: 'https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 
-        content: 'All community members are invited to attend the Quarterly Community Development Forum.',
-        content_sw: 'Wanajamii wote wanaalikwa kuhudhuria Jukwaa la Maendeleo ya Jamii la Kila Robo.',
-        author: 'Development Committee'
-      },
-      { 
-        id: 4, 
-        title: 'New Public Library Construction Begins', 
-        title_sw: 'Ujenzi wa Maktaba Mpya ya Umma Waanza',
-        category: 'development', 
-        date: '2026-06-15', 
-        summary: 'Construction of the new state-of-the-art public library has commenced.', 
-        summary_sw: 'Ujenzi wa maktaba mpya ya kisasa ya umma umeanza.',
-        image: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 
-        content: 'Construction of the new public library has officially begun. Expected completion by December 2026.',
-        content_sw: 'Ujenzi wa maktaba mpya ya umma umeanza rasmi. Inatarajiwa kukamilika ifikapo Desemba 2026.',
-        author: 'Infrastructure Department'
-      },
-      { 
-        id: 5, 
-        title: 'Emergency Weather Alert: Heavy Rainfall', 
-        title_sw: 'Tahadhari ya Dharura ya Hali ya Hewa: Mvua Kubwa',
-        category: 'emergency', 
-        date: '2026-06-14', 
-        summary: 'Heavy rainfall expected from June 20-22. Take necessary precautions.', 
-        summary_sw: 'Mvua kubwa inatarajiwa kuanzia Juni 20-22. Chukua tahadhari muhimu.',
-        image: 'https://images.unsplash.com/photo-1527482797697-8795b05eeb6d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 
-        content: 'EMERGENCY ALERT: Heavy rainfall warning for June 20-22. Emergency response teams are on standby.',
-        content_sw: 'TAHADHARI YA DHARURA: Onyo la mvua kubwa kwa Juni 20-22. Vikosi vya kukabiliana na dharura viko tayari.',
-        author: 'Emergency Services'
-      },
-      { 
-        id: 6, 
-        title: 'Free ICT Training for Youth', 
-        title_sw: 'Mafunzo ya Bure ya TEKNOLOJIA kwa Vijana',
-        category: 'general', 
-        date: '2026-06-12', 
-        summary: 'Registration open for free ICT training program for youth aged 18-30.', 
-        summary_sw: 'Usajili wazi kwa programu ya mafunzo ya TEKNOLOJIA ya bure kwa vijana wenye umri wa miaka 18-30.',
-        image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', 
-        content: 'Free ICT training program for youth aged 18-30. Limited slots available.',
-        content_sw: 'Programu ya mafunzo ya TEKNOLOJIA ya bure kwa vijana wenye umri wa miaka 18-30. Nafasi chache zinapatikana.',
-        author: 'Education Department'
-      }
-    ];
   }
 
   // ==================== CHECK AUTH STATUS ====================
   function isLoggedIn() {
-    const auth = localStorage.getItem('lams_auth') || sessionStorage.getItem('lams_auth');
-    if (auth) {
-      try {
-        const authData = JSON.parse(auth);
-        return authData.isLoggedIn === true;
-      } catch (e) {
-        return false;
+    return API.isAuthenticated();
+  }
+
+  // ==================== FETCH ANNOUNCEMENTS FROM BACKEND ====================
+  async function fetchAnnouncements(page = 1) {
+    if (isFetching) return;
+    isFetching = true;
+    
+    showLoading(true);
+    
+    try {
+      const filters = {};
+      if (currentSearch) filters.search = currentSearch;
+      if (currentFilter !== 'all') filters.category = currentFilter;
+      
+      console.log(`📢 [LAMS] Fetching announcements page ${page}...`);
+      const res = await API.public.getAnnouncements(page, perPage, filters);
+      
+      if (res.success) {
+        let announcements = [];
+        let total = 0;
+        
+        if (res.data && Array.isArray(res.data)) {
+          announcements = res.data;
+          total = res.meta?.total_records || res.meta?.total || announcements.length;
+        } else if (res.data && res.data.data && Array.isArray(res.data.data)) {
+          announcements = res.data.data;
+          total = res.data.pagination?.total_records || res.meta?.total || announcements.length;
+        }
+        
+        totalItems = total;
+        totalPages = Math.ceil(total / perPage) || 1;
+        
+        announcementsCache = announcements;
+        renderAnnouncements(announcements);
+        updatePagination(page);
+        
+        console.log(`✅ [LAMS] Loaded ${announcements.length} announcements (total: ${total})`);
+      } else {
+        console.error('❌ [LAMS] Failed to fetch announcements:', res.message);
+        renderAnnouncements([]);
+        showError(res.message || 'Failed to load announcements.');
       }
+    } catch (error) {
+      console.error('❌ [LAMS] Error fetching announcements:', error);
+      renderAnnouncements([]);
+      showError('Unable to connect to server. Please try again later.');
+    } finally {
+      showLoading(false);
+      isFetching = false;
     }
-    return false;
   }
 
   // ==================== RENDER ANNOUNCEMENTS ====================
-  function renderAnnouncements(announcementsToRender) {
+  function renderAnnouncements(announcements) {
     if (!announcementGrid) return;
 
     announcementGrid.innerHTML = '';
 
-    if (!announcementsToRender || announcementsToRender.length === 0) {
+    if (!announcements || announcements.length === 0) {
       noResults.style.display = 'block';
       if (resultsInfo) resultsInfo.style.display = 'none';
+      if (paginationContainer) paginationContainer.style.display = 'none';
       return;
     }
 
     noResults.style.display = 'none';
     if (resultsInfo) {
       resultsInfo.style.display = 'block';
-      resultsCount.textContent = announcementsToRender.length;
+      resultsCount.textContent = totalItems || announcements.length;
     }
 
-    const sorted = [...announcementsToRender].sort((a, b) => new Date(b.date) - new Date(a.date));
     const t = translations[currentLang];
 
-    sorted.forEach((ann, index) => {
+    announcements.forEach((ann, index) => {
       const card = document.createElement('div');
       card.className = 'announcement-card';
       card.style.animationDelay = `${index * 0.05}s`;
       card.setAttribute('data-id', ann.id);
-      card.setAttribute('data-category', ann.category);
+      card.setAttribute('data-category', ann.category || 'general');
 
-      const categoryLabel = getCategoryDisplayName(ann.category);
-      const title = currentLang === 'sw' && ann.title_sw ? ann.title_sw : ann.title;
-      const summary = currentLang === 'sw' && ann.summary_sw ? ann.summary_sw : ann.summary;
-      const dateFormatted = formatDate(ann.date);
+      const category = ann.category || 'general';
+      const categoryLabel = category.charAt(0).toUpperCase() + category.slice(1);
+      const title = ann.title || 'Announcement';
+      const summary = ann.description || ann.summary || '';
+      const dateFormatted = formatDate(ann.published_at || ann.created_at || ann.date);
+      const imageUrl = ann.image || 'image/meeting.png';
 
       card.innerHTML = `
         <div class="card-image">
-          <img src="${ann.image || 'https://images.unsplash.com/photo-1559223607-a43c990c692c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1559223607-a43c990c692c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'">
-          <span class="card-category-badge category-${ann.category}">${categoryLabel}</span>
+          <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(title)}" loading="lazy" onerror="this.src='image/health.png'">
+          <span class="card-category-badge category-${category}">${escapeHtml(categoryLabel)}</span>
         </div>
         <div class="card-body">
           <h3>${escapeHtml(title)}</h3>
           <div class="card-date">
             <i class="far fa-calendar-alt"></i> ${dateFormatted}
           </div>
-          <p class="card-summary">${escapeHtml(summary || '')}</p>
+          <p class="card-summary">${escapeHtml(summary.substring(0, 150))}${summary.length > 150 ? '...' : ''}</p>
           <div class="card-footer">
             <button class="btn btn-primary read-more-btn" data-id="${ann.id}">
               ${t.readMore} <i class="fas fa-arrow-right"></i>
@@ -380,14 +273,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     attachReadMoreEvents();
+    
+    // Show pagination
+    if (paginationContainer) {
+      paginationContainer.style.display = totalPages > 1 ? 'flex' : 'none';
+    }
   }
 
-  function getCategoryDisplayName(category) {
-    const t = translations[currentLang];
-    const displayKey = category + 'Display';
-    return t[displayKey] || t[category] || category;
-  }
-
+  // ==================== ATTACH READ MORE EVENTS ====================
   function attachReadMoreEvents() {
     document.querySelectorAll('.read-more-btn').forEach(btn => {
       btn.addEventListener('click', function(e) {
@@ -436,38 +329,51 @@ document.addEventListener('DOMContentLoaded', () => {
   if (loginModalOverlay) loginModalOverlay.addEventListener('click', closeLoginModal);
 
   // ==================== ANNOUNCEMENT DETAILS MODAL ====================
-  function showAnnouncementDetails(announcementId) {
-    const announcements = getAnnouncements();
-    const ann = announcements.find(a => a.id === announcementId);
-    if (!ann) return;
+  async function showAnnouncementDetails(announcementId) {
+    try {
+      const res = await API.public.getAnnouncement(announcementId);
+      
+      if (res.success && res.data) {
+        const ann = res.data;
+        
+        const title = ann.title || 'Announcement';
+        const content = ann.description || ann.content || ann.summary || '';
+        const category = ann.category || 'general';
+        const categoryLabel = category.charAt(0).toUpperCase() + category.slice(1);
+        const dateFormatted = formatDate(ann.published_at || ann.created_at || ann.date);
+        const imageUrl = ann.image || 'image/public.png';
 
-    const title = currentLang === 'sw' && ann.title_sw ? ann.title_sw : ann.title;
-    const content = currentLang === 'sw' && ann.content_sw ? ann.content_sw : (ann.content || ann.summary || '');
+        document.getElementById('detailsModalImage').src = imageUrl;
+        document.getElementById('detailsModalImage').alt = title;
+        document.getElementById('detailsModalTitle').textContent = title;
+        
+        document.getElementById('detailsModalDate').innerHTML = 
+          `<i class="far fa-calendar-alt"></i> ${dateFormatted}`;
+        
+        const authorEl = document.getElementById('detailsModalAuthor');
+        if (ann.created_by_name || ann.author) {
+          authorEl.style.display = 'flex';
+          authorEl.innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(ann.created_by_name || ann.author || 'Administrator')}`;
+        } else {
+          authorEl.style.display = 'none';
+        }
 
-    document.getElementById('detailsModalImage').src = ann.image || 'https://images.unsplash.com/photo-1559223607-a43c990c692c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
-    document.getElementById('detailsModalImage').alt = title;
-    document.getElementById('detailsModalTitle').textContent = title;
-    
-    document.getElementById('detailsModalDate').innerHTML = 
-      `<i class="far fa-calendar-alt"></i> ${formatDate(ann.date)}`;
-    
-    const authorEl = document.getElementById('detailsModalAuthor');
-    if (ann.author) {
-      authorEl.style.display = 'flex';
-      authorEl.innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(ann.author)}`;
-    } else {
-      authorEl.style.display = 'none';
+        const categoryEl = document.getElementById('detailsModalCategory');
+        categoryEl.textContent = categoryLabel;
+        categoryEl.className = `announcement-category category-${category}`;
+
+        document.getElementById('detailsModalContent').textContent = content;
+
+        detailsModalOverlay.classList.add('active');
+        detailsModal.classList.add('active');
+        body.style.overflow = 'hidden';
+      } else {
+        showToast('error', 'Unable to load announcement details.');
+      }
+    } catch (error) {
+      console.error('❌ [LAMS] Error loading announcement details:', error);
+      showToast('error', 'Failed to load announcement details.');
     }
-
-    const categoryEl = document.getElementById('detailsModalCategory');
-    categoryEl.textContent = getCategoryDisplayName(ann.category);
-    categoryEl.className = `announcement-category category-${ann.category}`;
-
-    document.getElementById('detailsModalContent').textContent = content;
-
-    detailsModalOverlay.classList.add('active');
-    detailsModal.classList.add('active');
-    body.style.overflow = 'hidden';
   }
 
   function closeDetailsModal() {
@@ -479,49 +385,116 @@ document.addEventListener('DOMContentLoaded', () => {
   if (detailsModalClose) detailsModalClose.addEventListener('click', closeDetailsModal);
   if (detailsModalOverlay) detailsModalOverlay.addEventListener('click', closeDetailsModal);
 
-  // ==================== SEARCH & FILTER ====================
-  function filterAnnouncements() {
-    const searchTerm = searchInput.value.toLowerCase().trim();
-    const category = categoryFilter.value;
-    const announcements = getAnnouncements();
-
-    let filtered = announcements.filter(ann => {
-      const annTitle = currentLang === 'sw' && ann.title_sw ? ann.title_sw.toLowerCase() : ann.title.toLowerCase();
-      const annSummary = currentLang === 'sw' && ann.summary_sw ? ann.summary_sw.toLowerCase() : (ann.summary || '').toLowerCase();
-      
-      const matchesSearch = searchTerm === '' || 
-        annTitle.includes(searchTerm) || 
-        annSummary.includes(searchTerm) ||
-        getCategoryDisplayName(ann.category).toLowerCase().includes(searchTerm);
-      
-      const matchesCategory = category === 'all' || ann.category === category;
-      
-      return matchesSearch && matchesCategory;
-    });
-
-    if (clearSearch) {
-      clearSearch.style.display = searchTerm ? 'flex' : 'none';
+  // ==================== PAGINATION ====================
+  function updatePagination(page) {
+    currentPage = page;
+    const t = translations[currentLang];
+    
+    if (prevPageBtn) {
+      prevPageBtn.disabled = page <= 1;
     }
+    if (nextPageBtn) {
+      nextPageBtn.disabled = page >= totalPages;
+    }
+    if (paginationInfo) {
+      paginationInfo.textContent = t.pageOf.replace('{page}', page).replace('{total}', totalPages);
+    }
+  }
 
-    renderAnnouncements(filtered);
+  if (prevPageBtn) {
+    prevPageBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        fetchAnnouncements(currentPage - 1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  }
+
+  if (nextPageBtn) {
+    nextPageBtn.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        fetchAnnouncements(currentPage + 1);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  }
+
+  // ==================== SEARCH & FILTER ====================
+  function handleSearchAndFilter() {
+    currentSearch = searchInput.value.trim();
+    currentPage = 1;
+    fetchAnnouncements(1);
+    
+    if (clearSearch) {
+      clearSearch.style.display = currentSearch ? 'flex' : 'none';
+    }
   }
 
   let searchTimeout;
   searchInput.addEventListener('input', () => {
     clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(filterAnnouncements, 300);
+    searchTimeout = setTimeout(handleSearchAndFilter, 400);
   });
 
   if (clearSearch) {
     clearSearch.addEventListener('click', () => {
       searchInput.value = '';
       clearSearch.style.display = 'none';
-      filterAnnouncements();
+      currentSearch = '';
+      currentPage = 1;
+      fetchAnnouncements(1);
       searchInput.focus();
     });
   }
 
-  categoryFilter.addEventListener('change', filterAnnouncements);
+  categoryFilter.addEventListener('change', () => {
+    currentFilter = categoryFilter.value;
+    currentPage = 1;
+    fetchAnnouncements(1);
+  });
+
+  // ==================== LOAD CATEGORIES ====================
+  async function loadCategories() {
+    try {
+      // Try to get categories from backend
+      const res = await API.public.getAnnouncements(1, 1);
+      if (res.success && res.data) {
+        // Extract unique categories from announcements
+        const categories = new Set();
+        let items = res.data;
+        if (res.data.data && Array.isArray(res.data.data)) {
+          items = res.data.data;
+        }
+        items.forEach(ann => {
+          if (ann.category) categories.add(ann.category);
+        });
+        
+        // Add default categories if none found
+        if (categories.size === 0) {
+          ['all', 'general', 'notice', 'event', 'emergency', 'meeting', 'development'].forEach(c => categories.add(c));
+        }
+        
+        // Update filter dropdown
+        const t = translations[currentLang];
+        categoryFilter.innerHTML = '';
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.textContent = t.allCategories || 'All Categories';
+        categoryFilter.appendChild(allOption);
+        
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat;
+          const label = cat.charAt(0).toUpperCase() + cat.slice(1);
+          option.textContent = label;
+          categoryFilter.appendChild(option);
+        });
+      }
+    } catch (e) {
+      console.log('ℹ️ [LAMS] Using default categories');
+      // Default categories already in HTML
+    }
+  }
 
   // ==================== UTILITY FUNCTIONS ====================
   function formatDate(dateString) {
@@ -542,6 +515,66 @@ document.addEventListener('DOMContentLoaded', () => {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  function showLoading(show) {
+    if (loadingIndicator) {
+      loadingIndicator.style.display = show ? 'block' : 'none';
+    }
+    if (announcementGrid) {
+      announcementGrid.style.display = show ? 'none' : 'grid';
+    }
+    if (noResults) {
+      noResults.style.display = 'none';
+    }
+    if (paginationContainer) {
+      paginationContainer.style.display = 'none';
+    }
+  }
+
+  function showError(message) {
+    noResults.style.display = 'block';
+    const noResultsTitle = document.getElementById('noResultsTitle');
+    const noResultsText = document.getElementById('noResultsText');
+    if (noResultsTitle) noResultsTitle.textContent = 'Error Loading Announcements';
+    if (noResultsText) noResultsText.textContent = message || 'Please try again later.';
+    if (resultsInfo) resultsInfo.style.display = 'none';
+    if (paginationContainer) paginationContainer.style.display = 'none';
+  }
+
+  function showToast(type, message) {
+    const existing = document.querySelector('.toast-container');
+    if (!existing) {
+      const container = document.createElement('div');
+      container.className = 'toast-container';
+      container.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+      document.body.appendChild(container);
+    }
+    
+    const container = document.querySelector('.toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    const icons = { success: 'fa-check-circle', error: 'fa-times-circle', info: 'fa-info-circle', warning: 'fa-exclamation-triangle' };
+    toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> ${message}`;
+    toast.style.cssText = `
+      padding: 14px 22px;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      animation: toastIn 0.4s ease, toastOut 0.4s ease 3s forwards;
+      min-width: 280px;
+      background: ${type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : type === 'warning' ? '#d97706' : '#2563eb'};
+    `;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+      if (toast.parentNode) toast.remove();
+    }, 4000);
   }
 
   // ==================== HAMBURGER MENU ====================
@@ -619,29 +652,35 @@ document.addEventListener('DOMContentLoaded', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  // ==================== LISTEN FOR NEW ANNOUNCEMENTS ====================
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'lams_announcements') {
-      filterAnnouncements();
-    }
-  });
-
-  window.addEventListener('lamsAnnouncementsUpdated', () => {
-    filterAnnouncements();
-  });
-
   // ==================== INITIALIZATION ====================
-  // Apply saved language
+  // Apply language
   applyLanguage(currentLang);
   
-  // Initial render
-  filterAnnouncements();
+  // Load categories
+  await loadCategories();
+  
+  // Fetch announcements
+  await fetchAnnouncements(1);
   
   window.dispatchEvent(new Event('scroll'));
   
   console.log('📢 LAMS Announcements Page - Initialized');
   console.log('🌐 Language:', currentLang.toUpperCase());
-  console.log('✅ Auto-loading admin announcements');
-  console.log('✅ Auth-gated Read More functionality');
+  console.log('✅ Connected to backend via API');
   console.log('✅ Search & Filter ready');
+  console.log('✅ Pagination ready');
 });
+
+// Add toast animation styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  @keyframes toastIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; }
+    to { opacity: 0; transform: translateY(-10px); }
+  }
+`;
+document.head.appendChild(styleSheet);
